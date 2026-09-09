@@ -1,0 +1,21 @@
+/// Вход по коду для браузерного расширения (OAuth Device Flow).
+/// Расширение показывает короткий код, пользователь подтверждает его
+/// в вебе или мобильном приложении, где уже авторизован.
+model DeviceCode {
+  id String @id @default(cuid())
+
+  code       String    @unique
+  expiresAt  DateTime  @map("expires_at")
+  approvedAt DateTime? @map("approved_at")
+  usedAt     DateTime? @map("used_at")
+
+  // Заполняется в момент подтверждения
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([expiresAt])
+  @@map("device_codes")
+}

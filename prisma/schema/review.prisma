@@ -1,0 +1,21 @@
+model Review {
+  id String @id @default(cuid())
+
+  rating   Int
+  text     String?
+  isPublic Boolean @default(true) @map("is_public")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  titleId String @map("title_id")
+  title   Title  @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Один отзыв на тайтл от пользователя
+  @@unique([userId, titleId])
+  @@index([titleId])
+  @@map("reviews")
+}

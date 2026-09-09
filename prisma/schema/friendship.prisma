@@ -1,0 +1,29 @@
+/// Дружба взаимная: заявка от sender к receiver, пока receiver её не принял,
+/// статус PENDING. Одна строка на пару в любую сторону
+model Friendship {
+  id     String           @id @default(cuid())
+  status FriendshipStatus @default(PENDING)
+
+  acceptedAt DateTime? @map("accepted_at")
+
+  senderId String @map("sender_id")
+  sender   User   @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId String @map("receiver_id")
+  receiver   User   @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId, status])
+  @@map("friendships")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+
+  @@map("friendship_statuses")
+}

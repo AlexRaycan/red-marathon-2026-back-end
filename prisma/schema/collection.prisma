@@ -1,0 +1,24 @@
+model Collection {
+  id String @id @default(cuid())
+
+  name        String
+  slug        String
+  description String?
+  coverUrl    String? @map("cover_url")
+  isPublic    Boolean @default(true) @map("is_public")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Подборка может смешивать типы: «Ведьмак» = игра + книга + сериал
+  titles Title[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Slug уникален внутри пользователя: двое могут назвать подборку «Ведьмак»
+  @@unique([userId, slug])
+  @@index([userId])
+  @@index([isPublic])
+  @@map("collections")
+}

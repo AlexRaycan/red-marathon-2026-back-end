@@ -1,0 +1,70 @@
+/// Тайтл — произведение как единица каталога: фильм, сериал, аниме, книга
+/// или игра.
+///
+/// Храним только то, что нужно нашим связям и нашим запросам: id для
+/// LibraryEntry и Review, name и slug для поиска, coverUrl для списков,
+/// rating и releaseDate для фильтров.
+///
+/// Описание, актёры и специфика типа НЕ хранятся — они нужны только
+/// на детальной странице и подтягиваются из внешнего API на лету.
+/// Так данные всегда свежие, а мы не держим у себя чужой контент.
+model Title {
+  id     String      @id @default(cuid())
+  type   TitleType
+  status TitleStatus @default(PUBLISHED)
+
+  name         String
+  originalName String? @map("original_name")
+  slug         String  @unique
+  coverUrl     String? @map("cover_url")
+
+  releaseDate DateTime? @map("release_date")
+  rating      Float     @default(0)
+  ratingCount Int       @default(0) @map("rating_count")
+
+  // Откуда пришёл тайтл. Пара source+id уникальна, чтобы один и тот же
+  // «Ведьмак» из TMDB не сохранился дважды при добавлении разными юзерами
+  externalId     String?         @map("external_id")
+  externalSource ExternalSource? @map("external_source")
+
+  genres         Genre[]
+  collections    Collection[]
+  reviews        Review[]
+  libraryEntries LibraryEntry[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([externalSource, externalId])
+  @@index([type, status])
+  @@index([name])
+  @@index([rating])
+  @@map("titles")
+}
+
+enum TitleType {
+  GAME
+  MOVIE
+  TV_SHOW
+  BOOK
+  ANIME
+
+  @@map("title_types")
+}
+
+enum TitleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("title_statuses")
+}
+
+enum ExternalSource {
+  TMDB
+  RAWG
+  GOOGLE_BOOKS
+  SHIKIMORI
+
+  @@map("external_sources")
+}

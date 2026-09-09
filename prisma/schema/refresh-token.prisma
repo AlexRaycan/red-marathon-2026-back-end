@@ -1,0 +1,20 @@
+/// Refresh-токены храним, чтобы их можно было отозвать при выходе.
+/// Веб получает токен в httpOnly-куке, мобильное приложение и расширение —
+/// в теле ответа: куки им недоступны.
+model RefreshToken {
+  id String @id @default(cuid())
+
+  // Храним хеш, а не сам токен: утечка базы не даст войти в аккаунты
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

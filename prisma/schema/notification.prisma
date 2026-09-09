@@ -1,0 +1,48 @@
+model Notification {
+  id String @id @default(cuid())
+
+  type    NotificationType @default(SYSTEM)
+  title   String
+  message String
+  isRead  Boolean          @default(false) @map("is_read")
+  readAt  DateTime?        @map("read_at")
+
+  // Куда ведёт уведомление. Храним не FK, а тип и id: объект может быть
+  // удалён, и уведомление не должно из-за этого пропасть или упасть
+  entityType NotificationEntity? @map("entity_type")
+  entityId   String?             @map("entity_id")
+
+  // Кто спровоцировал событие — «Alex shared a collection with you»
+  actorId String? @map("actor_id")
+  actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  SYSTEM
+  COLLECTION_SHARED
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  REVIEW_REPLY
+  SUBSCRIPTION
+  RECOMMENDATION
+
+  @@map("notification_types")
+}
+
+enum NotificationEntity {
+  COLLECTION
+  TITLE
+  REVIEW
+
+  @@map("notification_entities")
+}

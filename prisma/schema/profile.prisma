@@ -1,0 +1,34 @@
+model Profile {
+  id String @id @default(cuid())
+
+  displayName String?   @map("display_name")
+  bio         String?
+  avatarUrl   String?   @map("avatar_url")
+  country     String?
+  birthDate   DateTime? @map("birth_date")
+
+  // Taste DNA открывается по ссылке без авторизации — но только если
+  // пользователь сам разрешил. Публичные эндпоинты обязаны это проверять
+  isPublic Boolean @default(false) @map("is_public")
+
+  // Оценки везде храним по 10-балльной шкале. Это лишь предпочтение
+  // отображения: фронт делит на 2, когда показывает пятибалльную.
+  // AUTO — шкала по типу тайтла (книги и игры привычнее в пяти звёздах)
+  ratingScale RatingScale @default(AUTO) @map("rating_scale")
+
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}
+
+enum RatingScale {
+  AUTO
+  FIVE
+  TEN
+
+  @@map("rating_scales")
+}

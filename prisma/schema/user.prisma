@@ -1,0 +1,40 @@
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+
+  // При регистрации генерируется случайный, юзер меняет его в профиле
+  username String   @unique
+  password String
+  role     UserRole @default(USER)
+
+  isVerified  Boolean   @default(false) @map("is_verified")
+  verifiedAt  DateTime? @map("verified_at")
+  lastLoginAt DateTime? @map("last_login_at")
+
+  profile           Profile?
+  collections       Collection[]
+  reviews           Review[]
+  libraryEntries    LibraryEntry[]
+  subscriptions     Subscription[]
+  notifications     Notification[]
+  sentNotifications Notification[] @relation("NotificationActor")
+  refreshTokens     RefreshToken[]
+  deviceCodes       DeviceCode[]
+  pushTokens        PushToken[]
+
+  sentRequests     Friendship[] @relation("FriendshipSender")
+  receivedRequests Friendship[] @relation("FriendshipReceiver")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+
+  @@map("user_roles")
+}

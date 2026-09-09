@@ -1,0 +1,61 @@
+model Subscription {
+  id String @id @default(cuid())
+
+  plan   SubscriptionPlan   @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  startsAt   DateTime  @default(now()) @map("starts_at")
+  endsAt     DateTime? @map("ends_at")
+  canceledAt DateTime? @map("canceled_at")
+  autoRenew  Boolean   @default(true) @map("auto_renew")
+
+  // Оплата только внутри мобильного приложения — через Apple и Google.
+  // Веб и расширение показывают статус, но купить там нельзя
+  provider SubscriptionProvider? @map("provider")
+
+  // Сквозной id покупки. Apple шлёт originalTransactionId, Google —
+  // linkedPurchaseToken при апгрейде; по нему находим подписку из вебхука
+  originalTransactionId String? @unique @map("original_transaction_id")
+
+  // Токен для перепроверки статуса в API стора
+  purchaseToken String? @map("purchase_token")
+  // Id продукта в сторе — тарифов может стать несколько
+  productId     String? @map("product_id")
+
+  // Когда последний раз сверялись со стором
+  lastVerifiedAt DateTime? @map("last_verified_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([purchaseToken])
+  @@map("subscriptions")
+}
+
+enum SubscriptionProvider {
+  APPLE
+  GOOGLE
+
+  @@map("subscription_providers")
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+
+  @@map("subscription_plans")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+
+  @@map("subscription_statuses")
+}

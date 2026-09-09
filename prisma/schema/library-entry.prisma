@@ -1,0 +1,53 @@
+/// Запись в библиотеке пользователя: связь «юзер ↔ тайтл» с личными данными.
+/// Title — это «Ведьмак 3» вообще, один на всю базу.
+/// LibraryEntry — это «я играю в Ведьмака, 40 часов, оценка 9».
+model LibraryEntry {
+  id     String        @id @default(cuid())
+  status LibraryStatus @default(PLANNED)
+
+  // Прогресс хранится единообразно для всех типов тайтлов:
+  // 5 EPISODE для сериала, 120 PAGE для книги, 40 HOUR для игры
+  progress     Int?          @default(0)
+  progressUnit ProgressUnit? @map("progress_unit")
+
+  rating     Int? // личная оценка 1–10, не путать с Title.rating
+  note       String?
+  isFavorite Boolean   @default(false) @map("is_favorite")
+  startedAt  DateTime? @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  titleId String @map("title_id")
+  title   Title  @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Один тайтл — одна запись у пользователя
+  @@unique([userId, titleId])
+  @@index([userId, status])
+  @@index([userId, isFavorite])
+  @@map("library_entries")
+}
+
+enum LibraryStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+  DROPPED
+
+  @@map("library_statuses")
+}
+
+enum ProgressUnit {
+  EPISODE
+  CHAPTER
+  PAGE
+  HOUR
+  PERCENT
+
+  @@map("progress_units")
+}
