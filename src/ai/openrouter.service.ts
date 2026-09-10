@@ -1,6 +1,5 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common'
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Logger } from '@nestjs/common'
 
 import {
   AI_REQUEST_TIMEOUT_MS,
@@ -74,7 +73,10 @@ export class OpenRouterService {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: OPENROUTER_MODEL,
+          model: this.configService.get<string>(
+            'OPENROUTER_MODEL',
+            OPENROUTER_MODEL
+          ),
           messages,
           // Модель не сможет обернуть JSON в markdown или текст.
           // Поддерживают не все модели — отсюда запасной парсер ниже
