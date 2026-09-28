@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config'
 
 import {
   EXTERNAL_SEARCH_TAKE,
-  RAWG_BASE_URL
+  RAWG_BASE_URL,
+  TRENDING_TAKE_PER_SOURCE
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
@@ -65,6 +66,23 @@ export class RawgProvider extends BaseProvider implements ITitleProvider {
     return (data?.results ?? []).map(game => this._toExternalTitle(game))
   }
 
+  /** Самые добавляемые игры, вышедшие за последние полгода */
+  async getTrending(): Promise<IExternalTitle[]> {
+    const to = new Date()
+    const from = new Date()
+    from.setMonth(from.getMonth() - 6)
+
+    const data = await this.fetchJson<IRawgListResponse>(
+      this._url('/games', {
+        dates: `${this._formatDate(from)},${this._formatDate(to)}`,
+        ordering: '-added',
+        page_size: String(TRENDING_TAKE_PER_SOURCE)
+      })
+    )
+
+    return (data?.results ?? []).map(game => this._toExternalTitle(game))
+  }
+
   async findByExternalId(externalId: string): Promise<IExternalTitle | null> {
     const game = await this.fetchJson<IRawgGame>(
       this._url(`/games/${externalId}`, {})
@@ -94,6 +112,11 @@ export class RawgProvider extends BaseProvider implements ITitleProvider {
         platforms: (game.platforms ?? []).map(({ platform }) => platform.name)
       }
     }
+  }
+
+  /** RAWG принимает даты в формате YYYY-MM-DD */
+  private _formatDate(date: Date): string {
+    return date.toISOString().slice(0, 10)
   }
 
   private _url(path: string, params: Record<string, string>): string {

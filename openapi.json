@@ -4,16 +4,7 @@
     "/auth/register": {
       "post": {
         "operationId": "auth_register",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -44,16 +35,7 @@
     "/auth/login": {
       "post": {
         "operationId": "auth_login",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -84,16 +66,7 @@
     "/auth/refresh": {
       "post": {
         "operationId": "auth_refresh",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -172,16 +145,7 @@
     "/auth/mobile/register": {
       "post": {
         "operationId": "authMobile_register",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -212,16 +176,7 @@
     "/auth/mobile/login": {
       "post": {
         "operationId": "authMobile_login",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -252,16 +207,7 @@
     "/auth/mobile/refresh": {
       "post": {
         "operationId": "authMobile_refresh",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -323,16 +269,7 @@
     "/auth/mobile/device/code": {
       "post": {
         "operationId": "authMobile_createDeviceCode",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -354,16 +291,7 @@
     "/auth/mobile/device/poll": {
       "post": {
         "operationId": "authMobile_pollDeviceCode",
-        "parameters": [
-          {
-            "name": "user-agent",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -1370,6 +1298,84 @@
         ]
       }
     },
+    "/discover/trending": {
+      "get": {
+        "operationId": "discover_getTrending",
+        "parameters": [
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoverItemResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Верхний блок главной: фильмы, сериалы, игры, аниме и книги вперемешку",
+        "tags": [
+          "discover"
+        ]
+      }
+    },
+    "/discover/{key}": {
+      "get": {
+        "operationId": "discover_findByKey",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoverDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Детальная страница по ключу из карточки: `tmdb-movie-603`",
+        "tags": [
+          "discover"
+        ]
+      }
+    },
     "/collections": {
       "get": {
         "operationId": "collection_findAll",
@@ -1744,6 +1750,79 @@
         ]
       }
     },
+    "/notifications/push-token": {
+      "post": {
+        "operationId": "notification_registerPushToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Мобильное приложение присылает токен устройства после разрешения",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/push-token/{token}": {
+      "delete": {
+        "operationId": "notification_removePushToken",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Юзер выключил уведомления или вышел из аккаунта",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/notifications": {
       "get": {
         "operationId": "notification_findAll",
@@ -1902,6 +1981,164 @@
         ],
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/friends": {
+      "get": {
+        "operationId": "friendship_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "friends"
+        ]
+      }
+    },
+    "/friends/requests": {
+      "get": {
+        "operationId": "friendship_findRequests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequestListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Входящие заявки",
+        "tags": [
+          "friends"
+        ]
+      },
+      "post": {
+        "operationId": "friendship_request",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FriendRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "friends"
+        ]
+      }
+    },
+    "/friends/requests/{id}/accept": {
+      "post": {
+        "operationId": "friendship_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "friends"
+        ]
+      }
+    },
+    "/friends/{id}": {
+      "delete": {
+        "operationId": "friendship_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Отклонить заявку или удалить из друзей",
+        "tags": [
+          "friends"
         ]
       }
     },
@@ -2289,12 +2526,6 @@
             "maxLength": 100,
             "format": "email"
           },
-          "username": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 30,
-            "pattern": "^[a-zA-Z0-9_]+$"
-          },
           "password": {
             "type": "string",
             "minLength": 6,
@@ -2303,7 +2534,6 @@
         },
         "required": [
           "email",
-          "username",
           "password"
         ]
       },
@@ -2551,6 +2781,13 @@
       "UpdateProfileDto": {
         "type": "object",
         "properties": {
+          "username": {
+            "type": "string",
+            "description": "При регистрации выдаётся случайный — здесь юзер меняет его на свой",
+            "minLength": 3,
+            "maxLength": 30,
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
           "displayName": {
             "type": "string",
             "maxLength": 50
@@ -3172,8 +3409,7 @@
         "type": "object",
         "properties": {
           "titleId": {
-            "type": "string",
-            "format": "uuid"
+            "type": "string"
           },
           "status": {
             "type": "string",
@@ -3388,6 +3624,190 @@
         "required": [
           "provider",
           "token"
+        ]
+      },
+      "DiscoverItemResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Ключ для детальной страницы: `tmdb-movie-603`, `rawg-game-3328`"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "externalSource": {
+            "type": "string",
+            "enum": [
+              "TMDB",
+              "RAWG",
+              "GOOGLE_BOOKS",
+              "SHIKIMORI"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "GAME",
+              "MOVIE",
+              "TV_SHOW",
+              "BOOK",
+              "ANIME"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "externalId",
+          "externalSource",
+          "type",
+          "name",
+          "coverUrl",
+          "releaseDate",
+          "rating",
+          "genres"
+        ]
+      },
+      "DiscoverDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Ключ для детальной страницы: `tmdb-movie-603`, `rawg-game-3328`"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "externalSource": {
+            "enum": [
+              "TMDB",
+              "RAWG",
+              "GOOGLE_BOOKS",
+              "SHIKIMORI"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "GAME",
+              "MOVIE",
+              "TV_SHOW",
+              "BOOK",
+              "ANIME"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "originalName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ratingCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "actors": {
+            "description": "Актёры у фильмов, студии у игр и аниме, авторы у книг",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActorResponse"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Страницы книги, платформы игры, число серий"
+          }
+        },
+        "required": [
+          "key",
+          "externalId",
+          "externalSource",
+          "type",
+          "name",
+          "coverUrl",
+          "releaseDate",
+          "rating",
+          "genres",
+          "originalName",
+          "description",
+          "ratingCount",
+          "actors",
+          "metadata"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number"
+          },
+          "message": {
+            "type": "object"
+          },
+          "error": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "error",
+          "path",
+          "timestamp"
         ]
       },
       "CollectionListItemResponse": {
@@ -3628,8 +4048,7 @@
             "maxItems": 50,
             "type": "array",
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           }
         },
@@ -3640,7 +4059,7 @@
       "ShareCollectionDto": {
         "type": "object",
         "properties": {
-          "usernames": {
+          "friendIds": {
             "minItems": 1,
             "maxItems": 20,
             "type": "array",
@@ -3650,7 +4069,28 @@
           }
         },
         "required": [
-          "usernames"
+          "friendIds"
+        ]
+      },
+      "PushTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Токен из expo-notifications: ExponentPushToken[xxxxxxxx]",
+            "pattern": "^ExponentPushToken\\[.+\\]$"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ]
+          }
+        },
+        "required": [
+          "token",
+          "platform"
         ]
       },
       "NotificationActorResponse": {
@@ -3684,6 +4124,8 @@
             "enum": [
               "SYSTEM",
               "COLLECTION_SHARED",
+              "FRIEND_REQUEST",
+              "FRIEND_ACCEPTED",
               "REVIEW_REPLY",
               "SUBSCRIPTION",
               "RECOMMENDATION"
@@ -3766,6 +4208,98 @@
           "items",
           "isHasMore",
           "unreadCount"
+        ]
+      },
+      "FriendResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "avatarUrl"
+        ]
+      },
+      "FriendListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FriendResponse"
+            }
+          },
+          "totalCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "totalCount"
+        ]
+      },
+      "FriendRequestResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/FriendResponse"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "user"
+        ]
+      },
+      "FriendRequestListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FriendRequestResponse"
+            }
+          },
+          "totalCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "totalCount"
+        ]
+      },
+      "FriendRequestDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username"
         ]
       },
       "ReviewAuthorResponse": {
@@ -3909,8 +4443,7 @@
         "type": "object",
         "properties": {
           "titleId": {
-            "type": "string",
-            "format": "uuid"
+            "type": "string"
           },
           "rating": {
             "type": "number",

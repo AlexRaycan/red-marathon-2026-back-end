@@ -39,6 +39,8 @@ export interface ITitleProvider {
   readonly supportedTypes: TitleType[]
 
   search(query: string): Promise<IExternalTitle[]>
+  /** Популярное и свежее — для верхнего блока главной */
+  getTrending(): Promise<IExternalTitle[]>
   findByExternalId(
     externalId: string,
     type?: TitleType
