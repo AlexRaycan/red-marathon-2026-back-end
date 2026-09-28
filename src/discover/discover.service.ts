@@ -164,9 +164,11 @@ export class DiscoverService {
    * источник, тип (TMDB хранит фильмы и сериалы раздельно) и внешний id
    */
   private _toKey(item: IExternalTitle): string {
-    return [item.externalSource, item.type, item.externalId]
-      .join('-')
-      .toLowerCase()
+    return [
+      item.externalSource.toLowerCase(),
+      item.type.toLowerCase(),
+      item.externalId
+    ].join('-')
   }
 
   /**
