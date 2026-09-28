@@ -30,6 +30,13 @@ import { TmdbProvider } from './providers/tmdb.provider'
     GoogleBooksProvider,
     ShikimoriProvider
   ],
-  exports: [IntegrationService]
+  // Провайдеры нужны и главной (discover), чтобы не держать их в двух местах
+  exports: [
+    IntegrationService,
+    TmdbProvider,
+    RawgProvider,
+    GoogleBooksProvider,
+    ShikimoriProvider
+  ]
 })
 export class IntegrationModule {}

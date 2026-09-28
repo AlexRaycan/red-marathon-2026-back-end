@@ -9,7 +9,8 @@
     "build:clean": "rimraf dist *.tsbuildinfo && nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "db:up": "node src/scripts/db-up.mjs",
+    "start:dev": "pnpm db:up && nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"src/**/*.ts\" --fix",
@@ -69,13 +70,5 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "argon2",
-      "@nestjs/core",
-      "@prisma/client",
-      "prisma"
-    ]
   }
 }

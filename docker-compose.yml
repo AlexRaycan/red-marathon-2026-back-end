@@ -1,3 +1,5 @@
+name: red-marathon
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -19,3 +21,4 @@ services:
 
 volumes:
   postgres-data:
+    name: red-marathon-postgres-data

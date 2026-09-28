@@ -5,7 +5,8 @@ import {
   EXTERNAL_SEARCH_TAKE,
   TMDB_BASE_URL,
   TMDB_CAST_LIMIT,
-  TMDB_IMAGE_URL
+  TMDB_IMAGE_URL,
+  TRENDING_TAKE_PER_SOURCE
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
@@ -81,14 +82,16 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
       this._url('/search/multi', { query })
     )
 
-    if (!data?.results) return []
+    return this._toExternalTitles(data, EXTERNAL_SEARCH_TAKE)
+  }
 
-    const genres = await this._getGenres()
+  /** Фильмы и сериалы, о которых говорят на этой неделе */
+  async getTrending(): Promise<IExternalTitle[]> {
+    const data = await this.fetchJson<ITmdbSearchResponse>(
+      this._url('/trending/all/week', {})
+    )
 
-    return data.results
-      .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-      .slice(0, EXTERNAL_SEARCH_TAKE)
-      .map(item => this._toExternalTitle(item, genres))
+    return this._toExternalTitles(data, TRENDING_TAKE_PER_SOURCE)
   }
 
   async findByExternalId(
@@ -110,6 +113,21 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
   }
 
   // Приватные хелперы
+
+  /** В общих списках TMDB бывают и люди — оставляем только фильмы и сериалы */
+  private async _toExternalTitles(
+    data: ITmdbSearchResponse | null,
+    take: number
+  ): Promise<IExternalTitle[]> {
+    if (!data?.results) return []
+
+    const genres = await this._getGenres()
+
+    return data.results
+      .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+      .slice(0, take)
+      .map(item => this._toExternalTitle(item, genres))
+  }
 
   private _toExternalTitle(
     item: ITmdbItem,

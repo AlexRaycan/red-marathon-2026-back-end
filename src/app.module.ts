@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config'
 import { AiModule } from './ai/ai.module'
 import { AuthModule } from './auth/auth.module'
 import { CollectionModule } from './collection/collection.module'
+import { DiscoverModule } from './discover/discover.module'
 import { FriendshipModule } from './friendship/friendship.module'
 import { IntegrationModule } from './integration/integration.module'
 import { LibraryModule } from './library/library.module'
@@ -23,6 +24,7 @@ import { UserModule } from './user/user.module'
     AuthModule,
     UserModule,
     TitleModule,
+    DiscoverModule,
     LibraryModule,
     CollectionModule,
     FriendshipModule,

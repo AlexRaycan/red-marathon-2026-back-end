@@ -3,7 +3,9 @@ import { ConfigService } from '@nestjs/config'
 
 import {
   EXTERNAL_SEARCH_TAKE,
-  GOOGLE_BOOKS_BASE_URL
+  GOOGLE_BOOKS_BASE_URL,
+  GOOGLE_BOOKS_COVER_WIDTH,
+  TRENDING_TAKE_PER_SOURCE
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
@@ -75,6 +77,27 @@ export class GoogleBooksProvider
       .map(book => this._toExternalTitle(book))
   }
 
+  /**
+   * Трендов у Google Books нет — берём свежую англоязычную художку.
+   * Книги без обложки отсекаем: в верхнем блоке главной они смотрятся пусто
+   */
+  async getTrending(): Promise<IExternalTitle[]> {
+    const data = await this.fetchJson<IGoogleBooksResponse>(
+      this._url('/volumes', {
+        q: 'subject:fiction',
+        orderBy: 'newest',
+        printType: 'books',
+        langRestrict: 'en',
+        maxResults: String(TRENDING_TAKE_PER_SOURCE)
+      })
+    )
+
+    return (data?.items ?? [])
+      .filter(book => book.volumeInfo?.title)
+      .map(book => this._toExternalTitle(book))
+      .filter(({ coverUrl }) => Boolean(coverUrl))
+  }
+
   async findByExternalId(externalId: string): Promise<IExternalTitle | null> {
     const book = await this.fetchJson<IGoogleBook>(
       this._url(`/volumes/${externalId}`, {})
@@ -92,8 +115,7 @@ export class GoogleBooksProvider
       type: TitleType.BOOK,
       name: info.title ?? '',
       description: info.description || undefined,
-      // Google отдаёт http-ссылки, принудительно переводим на https
-      coverUrl: info.imageLinks?.thumbnail?.replace('http://', 'https://'),
+      coverUrl: this._getCoverUrl(info.imageLinks?.thumbnail),
       releaseDate: this.toDate(info.publishedDate),
       // У Google 5-балльная шкала
       rating: info.averageRating ? info.averageRating * 2 : undefined,
@@ -108,6 +130,24 @@ export class GoogleBooksProvider
         ...(info.language ? { language: info.language } : {})
       }
     }
+  }
+
+  /**
+   * thumbnail у Google — превью 128px (zoom=1) с загнутым уголком (edge=curl).
+   * Вместо zoom просим точную ширину через fife: zoom=0 отдаёт то 800px,
+   * то 1700px и полмегабайта
+   */
+  private _getCoverUrl(thumbnail?: string): string | undefined {
+    if (!thumbnail) return undefined
+
+    // Google отдаёт http-ссылки, принудительно переводим на https
+    const url = new URL(thumbnail.replace('http://', 'https://'))
+
+    url.searchParams.delete('zoom')
+    url.searchParams.delete('edge')
+    url.searchParams.set('fife', `w${GOOGLE_BOOKS_COVER_WIDTH}`)
+
+    return url.toString()
   }
 
   private _url(path: string, params: Record<string, string>): string {
