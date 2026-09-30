@@ -19,17 +19,11 @@ PostgreSQL не публикует порт вообще. API не добавл�
 ## 1. Как устроены ветки
 
 - `main` хранит очередную исходную версию backend от автора марафона.
-- `codex/oracle-dev-runtime` хранит только наши файлы запуска на Oracle.
-- Dokploy разворачивает ветку `codex/oracle-dev-runtime`.
-
-Перед первым push наши изменения нужно закоммитить самостоятельно:
-
-```powershell
-git status
-git add Dockerfile .dockerignore compose.dokploy.yml dokploy.env.example pnpm-workspace.yaml docs/oracle-development.md
-git commit -m "chore: add Oracle development runtime"
-git push -u origin codex/oracle-dev-runtime
-```
+- `feature/oracle-dev-runtime` хранит авторский backend вместе с нашими
+  настройками запуска на Oracle.
+- Dokploy разворачивает `feature/oracle-dev-runtime` из
+  `./compose.dokploy.yml`. Новые версии автора сначала попадают в `main`,
+  затем сливаются в эту постоянную ветку.
 
 Файл `.env` добавлять нельзя: он содержит секреты и уже исключён через
 `.gitignore`.
@@ -61,9 +55,9 @@ URL-кодирования.
 5. Укажи имя `backend`.
 6. Выбери тип `Docker Compose`, не `Stack`.
 7. В качестве источника выбери GitHub и приватный репозиторий backend.
-8. Укажи ветку `codex/oracle-dev-runtime`.
+8. Укажи ветку `feature/oracle-dev-runtime`.
 9. В поле Compose Path укажи `./compose.dokploy.yml`.
-10. Сохрани настройки. Auto Deploy пока оставь выключенным.
+10. Сохрани настройки. Для действующего сервиса Auto Deploy включён.
 11. Если в интерфейсе есть `Isolated Deployments`, для этого Compose оставь
     опцию выключенной: Compose уже создаёт свою закрытую сеть проекта, а домен и
     общая сеть Traefik этому dev-сервису не нужны.
@@ -230,11 +224,25 @@ healthcheck и через SSH-туннель адреса `/api/docs` и `/disco
 Сначала сравни схемы и миграции. Если они изменились, сделай резервную копию
 PostgreSQL до push ветки развёртывания: откат кода не отменяет миграции базы.
 
-## 10. Возврат к проверенной версии
+## 10. Обновление от автора: версия 4
 
-Последняя рабочая версия до обновления, подтверждённая владельцем проекта, —
-коммит `0a9e444`. На него поставлен тег `deploy/2026-09-28-pre-v3`.
-Перед обновлением сохрани этот тег в GitHub вместе с резервной копией базы.
+Версия 4 импортирована отдельным коммитом в `main` и слита в
+`feature/oracle-dev-runtime`. Файлы Docker, Compose, SSH-доступа и переменных
+окружения не изменились. В детальном ответе появились `ageRating`, `cast`,
+`creators` и `similar`; прежнее поле `actors` заменено. Также добавлены
+рекомендации от внешних каталогов и запасные обложки книг из Open Library.
+Схема Prisma и миграции относительно версии 3 не менялись.
+
+После развёртывания проверь `/api/docs`, `/discover/trending` и детальную
+страницу `/discover/:key` через SSH-туннель. Клиенту, использующему `actors`,
+понадобится обновить контракт на `cast` и `creators`.
+
+## 11. Возврат к проверенной версии
+
+Рабочая версия 3 перед обновлением подтверждена на сервере и отмечена тегом
+`deploy/2026-09-28-v3` (коммит `8c3c377`). Ещё более ранняя версия доступна
+по тегу `deploy/2026-09-28-pre-v3`. Перед обновлением версии 4 сделана новая
+резервная копия базы.
 
 Если новый Deploy не проходит проверку, верни файлы из последнего рабочего
 тега новым коммитом в той же ветке. Начинай только с чистой рабочей копии:
@@ -242,7 +250,7 @@ PostgreSQL до push ветки развёртывания: откат кода 
 ```powershell
 git switch feature/oracle-dev-runtime
 git status --short
-git restore --source=deploy/2026-09-28-pre-v3 --staged --worktree -- .
+git restore --source=deploy/2026-09-28-v3 --staged --worktree -- .
 git diff --cached --stat
 git commit -m "rollback to last working release"
 git push origin feature/oracle-dev-runtime
