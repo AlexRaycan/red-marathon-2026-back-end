@@ -6,6 +6,7 @@ import { TitleStatus } from '../generated/prisma/enums'
 import { IntegrationService } from '../integration/integration.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
+import { toPersonResponse } from '../utils/to-person-response'
 
 import { SearchQueryDto } from './dto/search-query.dto'
 import { TitleQueryDto, TitleSortEnum } from './dto/title-query.dto'
@@ -93,10 +94,9 @@ export class TitleService {
       ...rest,
       similar,
       description: details?.description ?? null,
-      actors: (details?.actors ?? []).map(({ name, photoUrl }) => ({
-        name,
-        photoUrl: photoUrl ?? null
-      })),
+      ageRating: details?.ageRating ?? null,
+      cast: (details?.cast ?? []).map(toPersonResponse),
+      creators: (details?.creators ?? []).map(toPersonResponse),
       metadata: details?.metadata ?? {}
     }
   }

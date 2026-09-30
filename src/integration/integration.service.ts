@@ -133,7 +133,9 @@ export class IntegrationService {
 
       const details: ITitleDetails = {
         description: external.description,
-        actors: external.actors ?? [],
+        ageRating: external.ageRating,
+        cast: external.cast ?? [],
+        creators: external.creators ?? [],
         metadata: external.metadata ?? {}
       }
 
@@ -176,13 +178,15 @@ export class IntegrationService {
   private async _saveTitle(
     external: IExternalTitle
   ): Promise<{ id: string; slug: string }> {
-    // description, actors и metadata не храним — они приходят из API
+    // description, возрастной рейтинг, люди и metadata не храним — они приходят из API
     // при открытии детальной страницы
     const {
       genres,
-      actors: _actors,
+      cast: _cast,
+      creators: _creators,
       metadata: _metadata,
       description: _description,
+      ageRating: _ageRating,
       ...rest
     } = external
 

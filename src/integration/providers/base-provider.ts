@@ -31,6 +31,24 @@ export abstract class BaseProvider {
     })
   }
 
+  /**
+   * Есть ли ресурс по ссылке — без скачивания тела. Редирект считаем ответом
+   * «есть»: Open Library отдаёт обложку через 302 на архив, идти туда незачем
+   */
+  protected async exists(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, {
+        method: 'HEAD',
+        redirect: 'manual',
+        signal: AbortSignal.timeout(EXTERNAL_REQUEST_TIMEOUT_MS)
+      })
+
+      return response.status >= 200 && response.status < 400
+    } catch {
+      return false
+    }
+  }
+
   protected toDate(value?: string | null): Date | undefined {
     if (!value) return undefined
 

@@ -1,14 +1,18 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
+import { SIMILAR_TAKE } from '../../constants/app.constants'
 import {
   EXTERNAL_SEARCH_TAKE,
   GOOGLE_BOOKS_BASE_URL,
   GOOGLE_BOOKS_COVER_WIDTH,
+  GOOGLE_BOOKS_MAX_RESULTS,
+  OPEN_LIBRARY_COVERS_URL,
   TRENDING_TAKE_PER_SOURCE
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
+  CreatorRoleEnum,
   IExternalTitle,
   ITitleProvider
 } from '../interfaces/title-provider.interface'
@@ -44,6 +48,9 @@ interface IGoogleBook {
     averageRating?: number
     ratingsCount?: number
     language?: string
+    /** MATURE или NOT_MATURE — другой возрастной разметки у Google нет */
+    maturityRating?: string
+    industryIdentifiers?: { type: string; identifier: string }[]
     imageLinks?: { thumbnail?: string; smallThumbnail?: string }
   }
 }
@@ -72,14 +79,13 @@ export class GoogleBooksProvider
       })
     )
 
-    return (data?.items ?? [])
-      .filter(book => book.volumeInfo?.title)
-      .map(book => this._toExternalTitle(book))
+    return this._toExternalTitles(data?.items ?? [])
   }
 
   /**
    * Трендов у Google Books нет — берём свежую англоязычную художку.
-   * Книги без обложки отсекаем: в верхнем блоке главной они смотрятся пусто
+   * Книги, для которых обложки нет ни в Google, ни в Open Library,
+   * отсекаем: в верхнем блоке главной они смотрятся пусто
    */
   async getTrending(): Promise<IExternalTitle[]> {
     const data = await this.fetchJson<IGoogleBooksResponse>(
@@ -92,10 +98,9 @@ export class GoogleBooksProvider
       })
     )
 
-    return (data?.items ?? [])
-      .filter(book => book.volumeInfo?.title)
-      .map(book => this._toExternalTitle(book))
-      .filter(({ coverUrl }) => Boolean(coverUrl))
+    const items = await this._toExternalTitles(data?.items ?? [])
+
+    return items.filter(({ coverUrl }) => Boolean(coverUrl))
   }
 
   async findByExternalId(externalId: string): Promise<IExternalTitle | null> {
@@ -103,7 +108,85 @@ export class GoogleBooksProvider
       this._url(`/volumes/${externalId}`, {})
     )
 
-    return book?.volumeInfo?.title ? this._toExternalTitle(book) : null
+    const [item] = await this._toExternalTitles(book ? [book] : [])
+
+    return item ?? null
+  }
+
+  /**
+   * «Похожих» у Google Books нет, а категории слишком общие («Fiction»),
+   * поэтому берём другие книги того же автора. У одной книги бывает
+   * десяток изданий — дубли по названию отсекаем, как и саму книгу
+   */
+  async getSimilar(title: IExternalTitle): Promise<IExternalTitle[]> {
+    const [author] = title.creators ?? []
+
+    if (!author) return []
+
+    const data = await this.fetchJson<IGoogleBooksResponse>(
+      this._url('/volumes', {
+        q: `inauthor:"${author.name}"`,
+        printType: 'books',
+        maxResults: String(GOOGLE_BOOKS_MAX_RESULTS)
+      })
+    )
+
+    const seenNames = new Set([title.name.toLowerCase()])
+
+    // Дубли отсекаем до поиска обложек — чтобы не проверять лишние книги
+    const books = (data?.items ?? [])
+      .filter(({ volumeInfo }) => {
+        const key = volumeInfo?.title?.toLowerCase()
+
+        if (!key || seenNames.has(key)) return false
+
+        seenNames.add(key)
+
+        return true
+      })
+      .slice(0, SIMILAR_TAKE)
+
+    return this._toExternalTitles(books)
+  }
+
+  // Приватные хелперы
+
+  /**
+   * Книги без названия отбрасываем. У части книг Google не отдаёт обложку —
+   * для них ищем её в Open Library по ISBN, параллельно
+   */
+  private _toExternalTitles(books: IGoogleBook[]): Promise<IExternalTitle[]> {
+    return Promise.all(
+      books
+        .filter(book => book.volumeInfo?.title)
+        .map(async book => {
+          const item = this._toExternalTitle(book)
+
+          if (item.coverUrl) return item
+
+          return { ...item, coverUrl: await this._findOpenLibraryCover(book) }
+        })
+    )
+  }
+
+  private async _findOpenLibraryCover(
+    book: IGoogleBook
+  ): Promise<string | undefined> {
+    const identifiers = book.volumeInfo?.industryIdentifiers ?? []
+
+    const isbn = (
+      identifiers.find(({ type }) => type === 'ISBN_13') ??
+      identifiers.find(({ type }) => type === 'ISBN_10')
+    )?.identifier
+
+    if (!isbn) return undefined
+
+    const coverUrl = `${OPEN_LIBRARY_COVERS_URL}/${isbn}-L.jpg`
+
+    // Без default=false Open Library вместо 404 отдаёт пустую картинку 1×1
+    const isFound = await this.exists(`${coverUrl}?default=false`)
+
+    return isFound ? coverUrl : undefined
   }
 
   private _toExternalTitle(book: IGoogleBook): IExternalTitle {
@@ -121,8 +204,11 @@ export class GoogleBooksProvider
       rating: info.averageRating ? info.averageRating * 2 : undefined,
       ratingCount: info.ratingsCount,
       genres: info.categories ?? [],
-      // У книг «создатели» — авторы
-      actors: (info.authors ?? []).map(name => ({ name })),
+      ageRating: info.maturityRating === 'MATURE' ? '18+' : undefined,
+      creators: (info.authors ?? []).map(name => ({
+        name,
+        role: CreatorRoleEnum.Author
+      })),
       metadata: {
         authors: info.authors ?? [],
         ...(info.pageCount ? { pageCount: info.pageCount } : {}),

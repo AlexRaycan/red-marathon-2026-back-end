@@ -3033,7 +3033,7 @@
           "slug"
         ]
       },
-      "ActorResponse": {
+      "PersonResponse": {
         "type": "object",
         "properties": {
           "name": {
@@ -3045,6 +3045,39 @@
           }
         },
         "required": [
+          "name",
+          "photoUrl"
+        ]
+      },
+      "CreatorRole": {
+        "type": "string",
+        "enum": [
+          "DIRECTOR",
+          "CREATOR",
+          "STUDIO",
+          "AUTHOR"
+        ]
+      },
+      "CreatorResponse": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreatorRole"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "role",
           "name",
           "photoUrl"
         ]
@@ -3120,11 +3153,23 @@
             "nullable": true,
             "description": "Ниже — из внешнего API, в нашей базе не хранится"
           },
-          "actors": {
-            "description": "Актёры у фильмов, студии у игр и аниме, авторы у книг",
+          "ageRating": {
+            "type": "string",
+            "nullable": true,
+            "description": "PG-13, TV-MA, M, R-17+ — у каждого источника своя система"
+          },
+          "cast": {
+            "description": "Актёры — только у фильмов и сериалов, у остальных пустой список",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ActorResponse"
+              "$ref": "#/components/schemas/PersonResponse"
+            }
+          },
+          "creators": {
+            "description": "Режиссёр, автор идеи сериала, студия игры или аниме, автор книги",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatorResponse"
             }
           },
           "metadata": {
@@ -3148,7 +3193,9 @@
           "similar",
           "createdAt",
           "description",
-          "actors",
+          "ageRating",
+          "cast",
+          "creators",
           "metadata"
         ]
       },
@@ -3753,17 +3800,36 @@
             "type": "number",
             "nullable": true
           },
-          "actors": {
-            "description": "Актёры у фильмов, студии у игр и аниме, авторы у книг",
+          "ageRating": {
+            "type": "string",
+            "nullable": true,
+            "description": "PG-13, TV-MA, M, R-17+ — у каждого источника своя система"
+          },
+          "cast": {
+            "description": "Актёры — только у фильмов и сериалов, у остальных пустой список",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ActorResponse"
+              "$ref": "#/components/schemas/PersonResponse"
+            }
+          },
+          "creators": {
+            "description": "Режиссёр, автор идеи сериала, студия игры или аниме, автор книги",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatorResponse"
             }
           },
           "metadata": {
             "type": "object",
             "additionalProperties": true,
             "description": "Страницы книги, платформы игры, число серий"
+          },
+          "similar": {
+            "description": "«You may also like» — приходит вместе со страницей, отдельный запрос не нужен",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoverItemResponse"
+            }
           }
         },
         "required": [
@@ -3779,8 +3845,11 @@
           "originalName",
           "description",
           "ratingCount",
-          "actors",
-          "metadata"
+          "ageRating",
+          "cast",
+          "creators",
+          "metadata",
+          "similar"
         ]
       },
       "ErrorResponse": {

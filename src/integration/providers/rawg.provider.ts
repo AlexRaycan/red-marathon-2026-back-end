@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
+import { SIMILAR_TAKE } from '../../constants/app.constants'
 import {
   EXTERNAL_SEARCH_TAKE,
   RAWG_BASE_URL,
@@ -8,6 +9,7 @@ import {
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
+  CreatorRoleEnum,
   IExternalTitle,
   ITitleProvider
 } from '../interfaces/title-provider.interface'
@@ -39,7 +41,18 @@ interface IRawgGame {
   playtime?: number
   genres?: { name: string }[]
   platforms?: { platform: { name: string } }[]
-  developers?: { name: string }[]
+  developers?: { id: number; name: string }[]
+  esrb_rating?: { slug: string } | null
+}
+
+// Короткие метки ESRB, как на коробках. rating-pending сюда не входит —
+// «рейтинг ещё не присвоен» для юзера то же, что его отсутствие
+const ESRB_LABELS: Record<string, string> = {
+  everyone: 'E',
+  'everyone-10-plus': 'E10+',
+  teen: 'T',
+  mature: 'M',
+  'adults-only': 'AO'
 }
 
 interface IRawgListResponse {
@@ -91,6 +104,67 @@ export class RawgProvider extends BaseProvider implements ITitleProvider {
     return game ? this._toExternalTitle(game) : null
   }
 
+  /**
+   * Сначала игры той же серии, затем — той же студии: как «тот же автор»
+   * у книг. У одиночной игры серии нет, а студия есть почти всегда.
+   * Настоящие «похожие» у RAWG (/suggested) — только на платном тарифе,
+   * а подбор по жанру выдаёт одни и те же хиты для любой игры
+   */
+  async getSimilar(title: IExternalTitle): Promise<IExternalTitle[]> {
+    const [series, byDevelopers] = await Promise.all([
+      this.fetchJson<IRawgListResponse>(
+        this._url(`/games/${title.externalId}/game-series`, {
+          page_size: String(SIMILAR_TAKE)
+        })
+      ),
+      this._getGamesByDevelopers(title.externalId)
+    ])
+
+    // Игра серии часто сделана той же студией — не показываем её дважды
+    const seenIds = new Set([title.externalId])
+
+    return [...(series?.results ?? []), ...byDevelopers]
+      .filter(({ id }) => {
+        if (seenIds.has(String(id))) return false
+
+        seenIds.add(String(id))
+
+        return true
+      })
+      .slice(0, SIMILAR_TAKE)
+      .map(game => this._toExternalTitle(game))
+  }
+
+  // Приватные хелперы
+
+  /**
+   * В тайтле студии лежат только именами, а фильтр /games принимает id —
+   * поэтому ещё раз берём детали игры. Ответ целиком кешируется на час
+   */
+  private async _getGamesByDevelopers(
+    externalId: string
+  ): Promise<IRawgGame[]> {
+    const game = await this.fetchJson<IRawgGame>(
+      this._url(`/games/${externalId}`, {})
+    )
+
+    const developerIds = (game?.developers ?? []).map(({ id }) => id)
+
+    if (!developerIds.length) return []
+
+    const data = await this.fetchJson<IRawgListResponse>(
+      this._url('/games', {
+        developers: developerIds.join(','),
+        // Самое популярное первым, без DLC и дополнений
+        ordering: '-added',
+        exclude_additions: 'true',
+        page_size: String(SIMILAR_TAKE)
+      })
+    )
+
+    return data?.results ?? []
+  }
+
   private _toExternalTitle(game: IRawgGame): IExternalTitle {
     return {
       externalId: String(game.id),
@@ -104,8 +178,14 @@ export class RawgProvider extends BaseProvider implements ITitleProvider {
       rating: game.rating ? game.rating * 2 : undefined,
       ratingCount: game.ratings_count,
       genres: (game.genres ?? []).map(({ name }) => name),
-      // У игр «создатели» — студии-разработчики
-      actors: (game.developers ?? []).map(({ name }) => ({ name })),
+      ageRating: game.esrb_rating
+        ? ESRB_LABELS[game.esrb_rating.slug]
+        : undefined,
+      // Актёров озвучки RAWG не отдаёт — только студии
+      creators: (game.developers ?? []).map(({ name }) => ({
+        name,
+        role: CreatorRoleEnum.Studio
+      })),
       metadata: {
         ...(game.metacritic ? { metacritic: game.metacritic } : {}),
         ...(game.playtime ? { averagePlaytimeHours: game.playtime } : {}),

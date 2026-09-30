@@ -1,4 +1,7 @@
+import { ApiProperty } from '@nestjs/swagger'
+
 import { TitleStatus, TitleType } from '../../generated/prisma/enums'
+import { CreatorRoleEnum } from '../../integration/interfaces/title-provider.interface'
 
 export class GenreResponse {
   id: string
@@ -7,9 +10,15 @@ export class GenreResponse {
 }
 
 /** Приходит из внешнего API, у нас не хранится */
-export class ActorResponse {
+export class PersonResponse {
   name: string
   photoUrl: string | null
+}
+
+export class CreatorResponse extends PersonResponse {
+  // as const плагин Swagger не разбирает — без этого orval выдаст string
+  @ApiProperty({ enum: CreatorRoleEnum, enumName: 'CreatorRole' })
+  role: CreatorRoleEnum
 }
 
 /** Карточка в списке — без тяжёлых полей */
@@ -40,8 +49,12 @@ export class TitleResponse extends TitleListItemResponse {
 
   /** Ниже — из внешнего API, в нашей базе не хранится */
   description: string | null
-  /** Актёры у фильмов, студии у игр и аниме, авторы у книг */
-  actors: ActorResponse[]
+  /** PG-13, TV-MA, M, R-17+ — у каждого источника своя система */
+  ageRating: string | null
+  /** Актёры — только у фильмов и сериалов, у остальных пустой список */
+  cast: PersonResponse[]
+  /** Режиссёр, автор идеи сериала, студия игры или аниме, автор книги */
+  creators: CreatorResponse[]
   /** Страницы книги, платформы игры, число серий */
   metadata: Record<string, unknown>
 }

@@ -2,6 +2,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { Cache } from 'cache-manager'
 
+import { SIMILAR_TAKE } from '../constants/app.constants'
 import {
   TITLE_DETAILS_CACHE_TTL_MS,
   TRENDING_CACHE_TTL_MS
@@ -15,6 +16,7 @@ import { GoogleBooksProvider } from '../integration/providers/google-books.provi
 import { RawgProvider } from '../integration/providers/rawg.provider'
 import { ShikimoriProvider } from '../integration/providers/shikimori.provider'
 import { TmdbProvider } from '../integration/providers/tmdb.provider'
+import { toPersonResponse } from '../utils/to-person-response'
 
 import {
   DiscoverDetailsResponse,
@@ -74,22 +76,29 @@ export class DiscoverService {
         provider.source === source && provider.supportedTypes.includes(type)
     )
 
-    const external = provider
-      ? await provider.findByExternalId(externalId, type)
-      : null
+    if (!provider) throw new NotFoundException('Title not found')
+
+    const external = await provider.findByExternalId(externalId, type)
 
     if (!external) throw new NotFoundException('Title not found')
+
+    // Недоступный источник вернёт пустой список — страница не ломается
+    const similar = await provider.getSimilar(external)
+    const ownKey = this._toKey(external)
 
     const details: DiscoverDetailsResponse = {
       ...this._toItem(external),
       originalName: external.originalName ?? null,
       description: external.description ?? null,
       ratingCount: external.ratingCount ?? null,
-      actors: (external.actors ?? []).map(({ name, photoUrl }) => ({
-        name,
-        photoUrl: photoUrl ?? null
-      })),
-      metadata: external.metadata ?? {}
+      ageRating: external.ageRating ?? null,
+      cast: (external.cast ?? []).map(toPersonResponse),
+      creators: (external.creators ?? []).map(toPersonResponse),
+      metadata: external.metadata ?? {},
+      similar: similar
+        .map(item => this._toItem(item))
+        .filter(item => item.key !== ownKey)
+        .slice(0, SIMILAR_TAKE)
     }
 
     await this.cache.set(cacheKey, details, TITLE_DETAILS_CACHE_TTL_MS)
@@ -161,12 +170,14 @@ export class DiscoverService {
 
   /**
    * Ключ собирает всё, что нужно, чтобы найти тайтл во внешнем API:
-   * источник, тип (TMDB хранит фильмы и сериалы раздельно) и внешний id
+   * источник, тип (TMDB хранит фильмы и сериалы раздельно) и внешний id.
+   * Регистр меняем только у источника и типа: id книг Google
+   * регистрозависимый — `XdMbTkWsFeMC` в нижнем регистре даёт 404
    */
   private _toKey(item: IExternalTitle): string {
-    return [item.externalSource, item.type, item.externalId]
-      .join('-')
-      .toLowerCase()
+    const prefix = `${item.externalSource}-${item.type}`.toLowerCase()
+
+    return `${prefix}-${item.externalId}`
   }
 
   /**
