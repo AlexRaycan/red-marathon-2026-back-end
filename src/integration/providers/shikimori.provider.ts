@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common'
 
+import { SIMILAR_TAKE } from '../../constants/app.constants'
 import {
   EXTERNAL_SEARCH_TAKE,
+  SHIKIMORI_API_URL,
   SHIKIMORI_GRAPHQL_URL,
   SHIKIMORI_USER_AGENT,
   TRENDING_TAKE_PER_SOURCE
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
+  CreatorRoleEnum,
   IExternalTitle,
   ITitleProvider
 } from '../interfaces/title-provider.interface'
@@ -45,13 +48,30 @@ interface IShikimoriAnime {
   score: number | null
   kind: string | null
   status: string | null
+  rating: string | null
   genres: { name: string }[] | null
   studios: { name: string }[]
+}
+
+// Shikimori отдаёт рейтинг кодом. R у аниме — это 17+, а не R из кино,
+// поэтому возраст пишем явно. none — «рейтинга нет»
+const AGE_RATING_LABELS: Record<string, string> = {
+  g: 'G',
+  pg: 'PG',
+  pg_13: 'PG-13',
+  r: 'R-17+',
+  r_plus: 'R+',
+  rx: 'Rx'
 }
 
 interface IShikimoriResponse {
   data?: { animes: IShikimoriAnime[] }
   errors?: { message: string }[]
+}
+
+/** Из REST-ответа /animes/:id/similar нужен только id */
+interface IShikimoriSimilarItem {
+  id: number
 }
 
 interface IShikimoriVariables {
@@ -88,6 +108,7 @@ const ANIMES_QUERY = `
       score
       kind
       status
+      rating
       genres { name }
       studios { name }
     }
@@ -127,6 +148,34 @@ export class ShikimoriProvider extends BaseProvider implements ITitleProvider {
     return anime ? this._toExternalTitle(anime) : null
   }
 
+  /**
+   * Похожее считает сам Shikimori, но отдаёт его только в REST — с мелкими
+   * постерами. Поэтому из REST берём id, а сами тайтлы — через GraphQL
+   */
+  async getSimilar(title: IExternalTitle): Promise<IExternalTitle[]> {
+    const similar = await this.fetchJson<IShikimoriSimilarItem[]>(
+      `${SHIKIMORI_API_URL}/animes/${title.externalId}/similar`,
+      { 'User-Agent': SHIKIMORI_USER_AGENT }
+    )
+
+    const ids = (similar ?? [])
+      .slice(0, SIMILAR_TAKE)
+      .map(({ id }) => String(id))
+
+    if (!ids.length) return []
+
+    const items = await this._fetchAnimes({
+      ids: ids.join(','),
+      limit: ids.length
+    })
+
+    // GraphQL отдаёт в своём порядке — возвращаем порядок Shikimori,
+    // самое похожее первым
+    return items
+      .sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
+      .map(anime => this._toExternalTitle(anime))
+  }
+
   private async _fetchAnimes(
     variables: IShikimoriVariables
   ): Promise<IShikimoriAnime[]> {
@@ -160,8 +209,11 @@ export class ShikimoriProvider extends BaseProvider implements ITitleProvider {
       // 0 у Shikimori значит «оценок нет», а не «худшая оценка»
       rating: anime.score || undefined,
       genres: (anime.genres ?? []).map(({ name }) => name),
-      // У аниме «создатели» — студии
-      actors: anime.studios.map(({ name }) => ({ name })),
+      ageRating: anime.rating ? AGE_RATING_LABELS[anime.rating] : undefined,
+      creators: anime.studios.map(({ name }) => ({
+        name,
+        role: CreatorRoleEnum.Studio
+      })),
       metadata: {
         ...(anime.episodes ? { episodes: anime.episodes } : {}),
         ...(anime.duration ? { episodeDurationMinutes: anime.duration } : {}),

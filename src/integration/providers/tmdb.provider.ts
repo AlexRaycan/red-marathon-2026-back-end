@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
+import { SIMILAR_TAKE } from '../../constants/app.constants'
 import {
   EXTERNAL_SEARCH_TAKE,
+  TMDB_AGE_RATING_COUNTRY,
   TMDB_BASE_URL,
   TMDB_CAST_LIMIT,
   TMDB_IMAGE_URL,
@@ -10,6 +12,9 @@ import {
 } from '../../constants/integration.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
+  CreatorRoleEnum,
+  IExternalCreator,
+  IExternalPerson,
   IExternalTitle,
   ITitleProvider
 } from '../interfaces/title-provider.interface'
@@ -47,14 +52,29 @@ interface ITmdbItem {
   number_of_seasons?: number
   number_of_episodes?: number
   runtime?: number
-  credits?: { cast?: ITmdbCastMember[] }
+  credits?: { cast?: ITmdbPerson[]; crew?: ITmdbCrewMember[] }
+  /** Возрастной рейтинг фильма — по странам и датам релиза */
+  release_dates?: {
+    results: {
+      iso_3166_1: string
+      release_dates: { certification: string }[]
+    }[]
+  }
+  /** Возрастной рейтинг сериала — по странам */
+  content_ratings?: { results: { iso_3166_1: string; rating: string }[] }
+  /** Авторы идеи — есть только у сериалов */
+  created_by?: ITmdbPerson[]
 }
 
-/** Актёры приходят только в деталях тайтла, в поиске их нет */
-interface ITmdbCastMember {
+/** Люди приходят только в деталях тайтла, в поиске их нет */
+interface ITmdbPerson {
   name?: string
   profile_path?: string | null
-  order?: number
+}
+
+/** Съёмочная группа: операторы, композиторы… Нам нужен только режиссёр */
+interface ITmdbCrewMember extends ITmdbPerson {
+  job?: string
 }
 
 interface ITmdbSearchResponse {
@@ -98,10 +118,12 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
     externalId: string,
     type?: TitleType
   ): Promise<IExternalTitle | null> {
-    const path = type === TitleType.TV_SHOW ? 'tv' : 'movie'
+    const path = this._getPath(type)
 
     const item = await this.fetchJson<ITmdbItem>(
-      this._url(`/${path}/${externalId}`, { append_to_response: 'credits' })
+      this._url(`/${path}/${externalId}`, {
+        append_to_response: `credits,${path === 'tv' ? 'content_ratings' : 'release_dates'}`
+      })
     )
 
     if (!item) return null
@@ -112,7 +134,33 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
     )
   }
 
+  /**
+   * Рекомендации TMDB строятся по тому, что зрители смотрят вместе, —
+   * это точнее, чем /similar, который подбирает только по жанрам и ключевым словам
+   */
+  async getSimilar(title: IExternalTitle): Promise<IExternalTitle[]> {
+    const path = this._getPath(title.type)
+
+    const data = await this.fetchJson<ITmdbSearchResponse>(
+      this._url(`/${path}/${title.externalId}/recommendations`, {})
+    )
+
+    // Фильму рекомендуют фильмы, сериалу — сериалы: тип проставляем сами,
+    // чтобы не зависеть от того, пришёл ли media_type в ответе
+    const results = (data?.results ?? []).map(item => ({
+      ...item,
+      media_type: path
+    }))
+
+    return this._toExternalTitles({ results }, SIMILAR_TAKE)
+  }
+
   // Приватные хелперы
+
+  /** Фильмы и сериалы у TMDB живут под разными путями */
+  private _getPath(type?: TitleType): 'movie' | 'tv' {
+    return type === TitleType.TV_SHOW ? 'tv' : 'movie'
+  }
 
   /** В общих списках TMDB бывают и люди — оставляем только фильмы и сериалы */
   private async _toExternalTitles(
@@ -155,7 +203,11 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
       rating: item.vote_average,
       ratingCount: item.vote_count,
       genres,
-      actors: this._getActors(item),
+      ageRating: this._getAgeRating(item),
+      cast: (item.credits?.cast ?? [])
+        .slice(0, TMDB_CAST_LIMIT)
+        .flatMap(person => this._toPerson(person)),
+      creators: this._getCreators(item),
       metadata: {
         ...(item.number_of_seasons ? { seasons: item.number_of_seasons } : {}),
         ...(item.number_of_episodes
@@ -166,15 +218,50 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
     }
   }
 
-  /** Берём только первых по порядку: в касте бывают сотни человек */
-  private _getActors(item: ITmdbItem): { name: string; photoUrl?: string }[] {
-    return (item.credits?.cast ?? [])
-      .filter(({ name }) => Boolean(name))
-      .slice(0, TMDB_CAST_LIMIT)
-      .map(({ name, profile_path }) => ({
-        name: name as string,
+  /**
+   * У фильма — режиссёр. У сериала режиссёров десятки, по одному на серию,
+   * поэтому берём авторов идеи (created_by)
+   */
+  private _getCreators(item: ITmdbItem): IExternalCreator[] {
+    if (item.media_type === 'tv') {
+      return (item.created_by ?? [])
+        .flatMap(person => this._toPerson(person))
+        .map(person => ({ ...person, role: CreatorRoleEnum.Creator }))
+    }
+
+    return (item.credits?.crew ?? [])
+      .filter(({ job }) => job === 'Director')
+      .flatMap(person => this._toPerson(person))
+      .map(person => ({ ...person, role: CreatorRoleEnum.Director }))
+  }
+
+  /** Есть только в деталях: в поиске и трендах release_dates не приходят */
+  private _getAgeRating(item: ITmdbItem): string | undefined {
+    if (item.media_type === 'tv') {
+      return (
+        item.content_ratings?.results.find(
+          ({ iso_3166_1 }) => iso_3166_1 === TMDB_AGE_RATING_COUNTRY
+        )?.rating || undefined
+      )
+    }
+
+    // У фильма несколько релизов (кино, цифра, ТВ) — рейтинг есть не у всех
+    return item.release_dates?.results
+      .find(({ iso_3166_1 }) => iso_3166_1 === TMDB_AGE_RATING_COUNTRY)
+      ?.release_dates.map(({ certification }) => certification)
+      .find(Boolean)
+  }
+
+  /** Без имени человека не показать — такие записи отбрасываем */
+  private _toPerson({ name, profile_path }: ITmdbPerson): IExternalPerson[] {
+    if (!name) return []
+
+    return [
+      {
+        name,
         photoUrl: profile_path ? `${TMDB_IMAGE_URL}${profile_path}` : undefined
-      }))
+      }
+    ]
   }
 
   private async _getGenres(): Promise<Map<number, string>> {
