@@ -1,4 +1,9 @@
-import { ExternalSource, TitleType } from '../../generated/prisma/enums'
+import {
+  ExternalSource,
+  LibraryStatus,
+  TitleType
+} from '../../generated/prisma/enums'
+import { ReviewResponse } from '../../review/response/review-response'
 import {
   CreatorResponse,
   PersonResponse
@@ -33,4 +38,16 @@ export class DiscoverDetailsResponse extends DiscoverItemResponse {
   metadata: Record<string, unknown>
   /** «You may also like» — приходит вместе со страницей, отдельный запрос не нужен */
   similar: DiscoverItemResponse[]
+}
+
+export class MyLibraryStatusResponse {
+  id: string
+  status: LibraryStatus
+}
+
+/** Что текущий пользователь уже сделал с тайтлом витрины */
+export class DiscoverMyStateResponse {
+  libraryEntry: MyLibraryStatusResponse | null
+  /** Включая приватный отзыв и оценку без текста */
+  review: ReviewResponse | null
 }

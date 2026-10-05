@@ -5,7 +5,6 @@ import {
   EXTERNAL_CACHE_MAX_ITEMS,
   EXTERNAL_CACHE_TTL_MS
 } from '../constants/integration.constants'
-import { LibraryModule } from '../library/library.module'
 
 import { IntegrationController } from './integration.controller'
 import { IntegrationService } from './integration.service'
@@ -16,7 +15,6 @@ import { TmdbProvider } from './providers/tmdb.provider'
 
 @Module({
   imports: [
-    LibraryModule,
     CacheModule.register({
       ttl: EXTERNAL_CACHE_TTL_MS,
       max: EXTERNAL_CACHE_MAX_ITEMS

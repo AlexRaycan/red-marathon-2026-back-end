@@ -6,6 +6,7 @@ export class LibraryEntryResponse {
   status: LibraryStatus
   progress: number | null
   progressUnit: ProgressUnit | null
+  /** Оценка из отзыва пользователя на этот тайтл — в библиотеке её нет */
   rating: number | null
   note: string | null
   isFavorite: boolean

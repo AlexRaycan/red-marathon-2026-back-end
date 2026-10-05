@@ -10,12 +10,13 @@ import {
   Post,
   Query
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 
 import { CreateReviewDto } from './dto/create-review.dto'
+import { ReviewFieldsDto } from './dto/review-fields.dto'
 import { ReviewQueryDto } from './dto/review-query.dto'
 import { UpdateReviewDto } from './dto/update-review.dto'
 import {
@@ -40,6 +41,16 @@ export class ReviewController {
     return this.reviewService.findByTitle(slug, query)
   }
 
+  /** Отзывы по ключу витрины: `tmdb-movie-603`. Тайтла у нас нет — пустой список */
+  @Get('discover/:key')
+  @ApiOkResponse({ type: ReviewListResponse })
+  findByDiscoverKey(
+    @Param('key') key: string,
+    @Query() query: ReviewQueryDto
+  ): Promise<ReviewListResponse> {
+    return this.reviewService.findByDiscoverKey(key, query)
+  }
+
   @Get('my')
   @Auth()
   @ApiOkResponse({ type: MyReviewListResponse })
@@ -52,12 +63,24 @@ export class ReviewController {
 
   @Post()
   @Auth()
-  @ApiOkResponse({ type: ReviewResponse })
+  @ApiCreatedResponse({ type: ReviewResponse })
   create(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateReviewDto
   ): Promise<ReviewResponse> {
-    return this.reviewService.create(userId, dto)
+    return this.reviewService.create(userId, { titleId: dto.titleId }, dto)
+  }
+
+  /** Отзыв по ключу витрины — тайтл сохранится у нас вместе с отзывом */
+  @Post('discover/:key')
+  @Auth()
+  @ApiCreatedResponse({ type: ReviewResponse })
+  createByDiscoverKey(
+    @CurrentUser('id') userId: string,
+    @Param('key') key: string,
+    @Body() dto: ReviewFieldsDto
+  ): Promise<ReviewResponse> {
+    return this.reviewService.create(userId, { key }, dto)
   }
 
   @Patch(':id')

@@ -22,8 +22,9 @@ model Title {
   rating      Float     @default(0)
   ratingCount Int       @default(0) @map("rating_count")
 
-  // Откуда пришёл тайтл. Пара source+id уникальна, чтобы один и тот же
-  // «Ведьмак» из TMDB не сохранился дважды при добавлении разными юзерами
+  // Откуда пришёл тайтл. Тройка source+type+id уникальна, чтобы один и тот же
+  // «Ведьмак» из TMDB не сохранился дважды при добавлении разными юзерами.
+  // Тип в ключе нужен TMDB: фильм и сериал с одним id — разные тайтлы
   externalId     String?         @map("external_id")
   externalSource ExternalSource? @map("external_source")
 
@@ -35,7 +36,7 @@ model Title {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([externalSource, externalId])
+  @@unique([externalSource, type, externalId])
   @@index([type, status])
   @@index([name])
   @@index([rating])

@@ -8,7 +8,7 @@ import {
   Res,
   UnauthorizedException
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 
 import {
@@ -35,7 +35,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOkResponse({ type: AuthResponse })
+  @ApiCreatedResponse({ type: AuthResponse })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response

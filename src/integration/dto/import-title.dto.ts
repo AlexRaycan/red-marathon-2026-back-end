@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator'
+import { IsEnum, IsString } from 'class-validator'
 
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 
@@ -9,8 +9,7 @@ export class ImportTitleDto {
   @IsString()
   readonly externalId: string
 
-  /** TMDB отдаёт фильмы и сериалы по разным путям — тип нужен ему */
-  @IsOptional()
+  /** Часть ключа тайтла: у TMDB фильм и сериал с одним id — разные тайтлы */
   @IsEnum(TitleType, { message: 'Unknown title type' })
-  readonly type?: TitleType
+  readonly type: TitleType
 }

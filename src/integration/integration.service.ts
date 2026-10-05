@@ -9,12 +9,9 @@ import {
 
 import { Prisma } from '../generated/prisma/client'
 import { ExternalSource, TitleType } from '../generated/prisma/enums'
-import { LibraryService } from '../library/library.service'
-import { LibraryEntryResponse } from '../library/response/library-response'
 import { PrismaService } from '../prisma/prisma.service'
 import { generateSlug } from '../utils/generate-slug'
 
-import { QuickAddDto } from './dto/quick-add.dto'
 import {
   IExternalTitle,
   ITitleDetails,
@@ -24,6 +21,12 @@ import { GoogleBooksProvider } from './providers/google-books.provider'
 import { RawgProvider } from './providers/rawg.provider'
 import { ShikimoriProvider } from './providers/shikimori.provider'
 import { TmdbProvider } from './providers/tmdb.provider'
+import { ImportedTitleResponse } from './response/external-title-response'
+
+/** Сохранение тайтла, отложенное до транзакции вызывающего */
+export type TSaveTitle = (
+  prisma: Prisma.TransactionClient
+) => Promise<ImportedTitleResponse>
 
 @Injectable()
 export class IntegrationService {
@@ -32,7 +35,6 @@ export class IntegrationService {
   constructor(
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
     private prisma: PrismaService,
-    private readonly libraryService: LibraryService,
     tmdb: TmdbProvider,
     rawg: RawgProvider,
     googleBooks: GoogleBooksProvider,
@@ -83,18 +85,33 @@ export class IntegrationService {
   async importTitle(
     source: ExternalSource,
     externalId: string,
-    type?: TitleType
-  ): Promise<{ id: string; slug: string }> {
-    const existing = await this.prisma.title.findUnique({
-      where: {
-        externalSource_externalId: { externalSource: source, externalId }
-      },
-      select: { id: true, slug: true }
-    })
+    type: TitleType
+  ): Promise<ImportedTitleResponse> {
+    const saveTitle = await this.prepareImport(source, externalId, type)
 
-    if (existing) return existing
+    return saveTitle(this.prisma)
+  }
 
-    const provider = this.providers.find(({ source: s }) => s === source)
+  /**
+   * Импорт в две фазы: внешний API опрашиваем сразу, а запись в базу
+   * отдаём вызывающему. Так он сохранит тайтл в своей транзакции вместе
+   * с отзывом или записью библиотеки, и транзакция не будет висеть
+   * открытой, пока ждём ответ внешнего API
+   */
+  async prepareImport(
+    source: ExternalSource,
+    externalId: string,
+    type: TitleType
+  ): Promise<TSaveTitle> {
+    const existing = await this.findImported(source, externalId, type)
+
+    if (existing) return () => Promise.resolve(existing)
+
+    // Без проверки типа TMDB по ключу `tmdb-game-603` вернул бы фильм
+    const provider = this.providers.find(
+      provider =>
+        provider.source === source && provider.supportedTypes.includes(type)
+    )
 
     if (!provider) throw new NotFoundException('Source is not supported')
 
@@ -103,7 +120,25 @@ export class IntegrationService {
     if (!external)
       throw new NotFoundException('Title not found in the external API')
 
-    return this._saveTitle(external)
+    return prisma => this._saveTitle(prisma, external)
+  }
+
+  /** Тайтл, который уже есть у нас. В базу ничего не пишет */
+  findImported(
+    source: ExternalSource,
+    externalId: string,
+    type: TitleType
+  ): Promise<ImportedTitleResponse | null> {
+    return this.prisma.title.findUnique({
+      where: {
+        externalSource_type_externalId: {
+          externalSource: source,
+          type,
+          externalId
+        }
+      },
+      select: { id: true, slug: true }
+    })
   }
 
   /**
@@ -116,7 +151,7 @@ export class IntegrationService {
     externalId: string,
     type: TitleType
   ): Promise<ITitleDetails | null> {
-    const cacheKey = `details:${source}:${externalId}`
+    const cacheKey = `details:${source}:${type}:${externalId}`
 
     const cached = await this.cache.get<ITitleDetails>(cacheKey)
 
@@ -148,25 +183,6 @@ export class IntegrationService {
     }
   }
 
-  /** Импорт и добавление в библиотеку одним запросом — для расширения */
-  async quickAdd(
-    userId: string,
-    dto: QuickAddDto
-  ): Promise<LibraryEntryResponse> {
-    const { id } = await this.importTitle(dto.source, dto.externalId, dto.type)
-
-    const existing = await this.libraryService.findByTitle(userId, id)
-
-    // Повторный клик по тому же тайтлу не должен падать ошибкой
-    if (existing) return existing
-
-    return this.libraryService.create(userId, {
-      titleId: id,
-      status: dto.status,
-      rating: dto.rating
-    })
-  }
-
   // Приватные хелперы
 
   private _getCacheKey(query: string, types?: TitleType[]): string {
@@ -176,8 +192,9 @@ export class IntegrationService {
   }
 
   private async _saveTitle(
+    prisma: Prisma.TransactionClient,
     external: IExternalTitle
-  ): Promise<{ id: string; slug: string }> {
+  ): Promise<ImportedTitleResponse> {
     // description, возрастной рейтинг, люди и metadata не храним — они приходят из API
     // при открытии детальной страницы
     const {
@@ -190,29 +207,68 @@ export class IntegrationService {
       ...rest
     } = external
 
-    return this.prisma.title.create({
-      data: {
-        ...rest,
-        slug: await this._getUniqueSlug(external.name),
-        genres: {
-          connectOrCreate: genres.map(name => ({
-            where: { slug: generateSlug(name) },
-            create: { name, slug: generateSlug(name) }
-          }))
+    // Жанры и связи с ними — отдельными запросами: вложенная запись
+    // в upsert заставляет Prisma отказаться от INSERT … ON CONFLICT.
+    // Сортируем, чтобы параллельные импорты блокировали жанры в одном
+    // порядке — иначе две транзакции могут ждать друг друга вечно
+    const genreIds = await Promise.all(
+      [...genres].sort().map(name => this._upsertGenre(prisma, name))
+    )
+
+    // upsert, а не create: параллельный импорт того же тайтла дождётся
+    // первого и получит его строку, а не ошибку уникального индекса.
+    // update не пустой намеренно — с пустым Prisma делает SELECT + INSERT.
+    // Заодно освежаем данные из источника
+    const title = await prisma.title.upsert({
+      where: {
+        externalSource_type_externalId: {
+          externalSource: external.externalSource,
+          type: external.type,
+          externalId: external.externalId
         }
       },
+      create: {
+        ...rest,
+        slug: await this._getUniqueSlug(prisma, external.name)
+      },
+      update: rest,
       select: { id: true, slug: true }
+    })
+
+    await prisma.title.update({
+      where: { id: title.id },
+      data: { genres: { connect: genreIds } },
+      select: { id: true }
+    })
+
+    return title
+  }
+
+  private _upsertGenre(
+    prisma: Prisma.TransactionClient,
+    name: string
+  ): Promise<{ id: string }> {
+    const slug = generateSlug(name)
+
+    return prisma.genre.upsert({
+      where: { slug },
+      create: { name, slug },
+      update: { name },
+      select: { id: true }
     })
   }
 
   /** Slug тайтла глобально уникален: «vedmak-3», «vedmak-3-2», … */
-  private async _getUniqueSlug(name: string): Promise<string> {
+  private async _getUniqueSlug(
+    prisma: Prisma.TransactionClient,
+    name: string
+  ): Promise<string> {
     const base = generateSlug(name) || 'title'
 
     for (let suffix = 0; suffix < 100; suffix++) {
       const slug = suffix ? `${base}-${suffix + 1}` : base
 
-      const existing = await this.prisma.title.findUnique({
+      const existing = await prisma.title.findUnique({
         where: { slug },
         select: { id: true }
       })

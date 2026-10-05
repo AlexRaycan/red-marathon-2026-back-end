@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { AuthService } from './auth.service'
 import { DeviceCodeDto } from './dto/device-code.dto'
@@ -23,7 +23,7 @@ export class AuthMobileController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOkResponse({ type: MobileAuthResponse })
+  @ApiCreatedResponse({ type: MobileAuthResponse })
   register(@Body() dto: RegisterDto): Promise<MobileAuthResponse> {
     return this.authService.register(dto)
   }

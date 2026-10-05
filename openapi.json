@@ -16,7 +16,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -157,7 +157,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -883,27 +883,104 @@
         ]
       }
     },
-    "/external/quick-add": {
-      "post": {
-        "operationId": "integration_quickAdd",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QuickAddDto"
-              }
+    "/discover/trending": {
+      "get": {
+        "operationId": "discover_getTrending",
+        "parameters": [
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LibraryEntryResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoverItemResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Верхний блок главной: фильмы, сериалы, игры, аниме и книги вперемешку",
+        "tags": [
+          "discover"
+        ]
+      }
+    },
+    "/discover/{key}": {
+      "get": {
+        "operationId": "discover_findByKey",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoverDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Детальная страница по ключу из карточки: `tmdb-movie-603`",
+        "tags": [
+          "discover"
+        ]
+      }
+    },
+    "/discover/{key}/me": {
+      "get": {
+        "operationId": "discover_findMyState",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoverMyStateResponse"
                 }
               }
             }
@@ -914,9 +991,385 @@
             "bearer": []
           }
         ],
-        "summary": "Добавление в один клик из расширения: импорт + библиотека",
+        "summary": "Статус в библиотеке и свой отзыв — одним запросом для детальной страницы",
         "tags": [
-          "external"
+          "discover"
+        ]
+      }
+    },
+    "/reviews/title/{slug}": {
+      "get": {
+        "operationId": "review_findByTitle",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": [
+                "rating",
+                "newest",
+                "ratingAsc"
+              ]
+            }
+          },
+          {
+            "name": "skip",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "searchTerm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Отзывы на тайтле — открыты без авторизации",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/reviews/discover/{key}": {
+      "get": {
+        "operationId": "review_findByDiscoverKey",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": [
+                "rating",
+                "newest",
+                "ratingAsc"
+              ]
+            }
+          },
+          {
+            "name": "skip",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "searchTerm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Отзывы по ключу витрины: `tmdb-movie-603`. Тайтла у нас нет — пустой список",
+        "tags": [
+          "reviews"
+        ]
+      },
+      "post": {
+        "operationId": "review_createByDiscoverKey",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewFieldsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Отзыв по ключу витрины — тайтл сохранится у нас вместе с отзывом",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/reviews/my": {
+      "get": {
+        "operationId": "review_findMy",
+        "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": [
+                "rating",
+                "newest",
+                "ratingAsc"
+              ]
+            }
+          },
+          {
+            "name": "skip",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "searchTerm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyReviewListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/reviews": {
+      "post": {
+        "operationId": "review_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/reviews/{id}": {
+      "patch": {
+        "operationId": "review_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
+        ]
+      },
+      "delete": {
+        "operationId": "review_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reviews"
         ]
       }
     },
@@ -977,7 +1430,6 @@
               "type": "string",
               "enum": [
                 "name",
-                "rating",
                 "recent"
               ]
             }
@@ -1047,7 +1499,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -1153,6 +1605,85 @@
         "parameters": [
           {
             "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "library"
+        ]
+      }
+    },
+    "/library/discover/{key}": {
+      "put": {
+        "operationId": "library_setStatusByDiscoverKey",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLibraryStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryEntryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Статус по ключу витрины: `tmdb-movie-603`. Нет записи — создаст",
+        "tags": [
+          "library"
+        ]
+      },
+      "delete": {
+        "operationId": "library_deleteByDiscoverKey",
+        "parameters": [
+          {
+            "name": "key",
             "required": true,
             "in": "path",
             "schema": {
@@ -1298,84 +1829,6 @@
         ]
       }
     },
-    "/discover/trending": {
-      "get": {
-        "operationId": "discover_getTrending",
-        "parameters": [
-          {
-            "name": "take",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 50,
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DiscoverItemResponse"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Верхний блок главной: фильмы, сериалы, игры, аниме и книги вперемешку",
-        "tags": [
-          "discover"
-        ]
-      }
-    },
-    "/discover/{key}": {
-      "get": {
-        "operationId": "discover_findByKey",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscoverDetailsResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Детальная страница по ключу из карточки: `tmdb-movie-603`",
-        "tags": [
-          "discover"
-        ]
-      }
-    },
     "/collections": {
       "get": {
         "operationId": "collection_findAll",
@@ -1445,7 +1898,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -2139,264 +2592,6 @@
         "summary": "Отклонить заявку или удалить из друзей",
         "tags": [
           "friends"
-        ]
-      }
-    },
-    "/reviews/title/{slug}": {
-      "get": {
-        "operationId": "review_findByTitle",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "skip",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "number"
-            }
-          },
-          {
-            "name": "take",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "searchTerm",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": "newest",
-              "type": "string",
-              "enum": [
-                "rating",
-                "newest",
-                "ratingAsc"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewListResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Отзывы на тайтле — открыты без авторизации",
-        "tags": [
-          "reviews"
-        ]
-      }
-    },
-    "/reviews/my": {
-      "get": {
-        "operationId": "review_findMy",
-        "parameters": [
-          {
-            "name": "skip",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "number"
-            }
-          },
-          {
-            "name": "take",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "searchTerm",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": "newest",
-              "type": "string",
-              "enum": [
-                "rating",
-                "newest",
-                "ratingAsc"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MyReviewListResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "reviews"
-        ]
-      }
-    },
-    "/reviews": {
-      "post": {
-        "operationId": "review_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReviewDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "reviews"
-        ]
-      }
-    },
-    "/reviews/{id}": {
-      "patch": {
-        "operationId": "review_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateReviewDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "reviews"
-        ]
-      },
-      "delete": {
-        "operationId": "review_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "reviews"
         ]
       }
     },
@@ -3278,7 +3473,7 @@
           },
           "type": {
             "type": "string",
-            "description": "TMDB отдаёт фильмы и сериалы по разным путям — тип нужен ему",
+            "description": "Часть ключа тайтла: у TMDB фильм и сериал с одним id — разные тайтлы",
             "enum": [
               "GAME",
               "MOVIE",
@@ -3290,7 +3485,8 @@
         },
         "required": [
           "source",
-          "externalId"
+          "externalId",
+          "type"
         ]
       },
       "ImportedTitleResponse": {
@@ -3306,371 +3502,6 @@
         "required": [
           "id",
           "slug"
-        ]
-      },
-      "QuickAddDto": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "enum": [
-              "TMDB",
-              "RAWG",
-              "GOOGLE_BOOKS",
-              "SHIKIMORI"
-            ],
-            "type": "string"
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "type": {
-            "description": "TMDB отдаёт фильмы и сериалы по разным путям — тип нужен ему",
-            "enum": [
-              "GAME",
-              "MOVIE",
-              "TV_SHOW",
-              "BOOK",
-              "ANIME"
-            ],
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PLANNED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "ON_HOLD",
-              "DROPPED"
-            ]
-          },
-          "rating": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 10
-          }
-        },
-        "required": [
-          "source",
-          "externalId"
-        ]
-      },
-      "LibraryEntryResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "status": {
-            "enum": [
-              "PLANNED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "ON_HOLD",
-              "DROPPED"
-            ],
-            "type": "string"
-          },
-          "progress": {
-            "type": "number",
-            "nullable": true
-          },
-          "progressUnit": {
-            "nullable": true,
-            "enum": [
-              "EPISODE",
-              "CHAPTER",
-              "PAGE",
-              "HOUR",
-              "PERCENT"
-            ],
-            "type": "string"
-          },
-          "rating": {
-            "type": "number",
-            "nullable": true
-          },
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "isFavorite": {
-            "type": "boolean"
-          },
-          "startedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "finishedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "title": {
-            "$ref": "#/components/schemas/TitleListItemResponse"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "progress",
-          "progressUnit",
-          "rating",
-          "note",
-          "isFavorite",
-          "startedAt",
-          "finishedAt",
-          "title",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "LibraryListResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LibraryEntryResponse"
-            }
-          },
-          "isHasMore": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "items",
-          "isHasMore"
-        ]
-      },
-      "CreateLibraryEntryDto": {
-        "type": "object",
-        "properties": {
-          "titleId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PLANNED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "ON_HOLD",
-              "DROPPED"
-            ]
-          },
-          "progress": {
-            "type": "number",
-            "minimum": 0
-          },
-          "progressUnit": {
-            "type": "string",
-            "enum": [
-              "EPISODE",
-              "CHAPTER",
-              "PAGE",
-              "HOUR",
-              "PERCENT"
-            ]
-          },
-          "rating": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 10
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "isFavorite": {
-            "type": "boolean"
-          },
-          "startedAt": {
-            "type": "string",
-            "description": "Если не прислать — проставится автоматически по статусу"
-          },
-          "finishedAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "titleId"
-        ]
-      },
-      "UpdateLibraryEntryDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "enum": [
-              "PLANNED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "ON_HOLD",
-              "DROPPED"
-            ],
-            "type": "string"
-          },
-          "progress": {
-            "type": "number",
-            "minimum": 0
-          },
-          "progressUnit": {
-            "enum": [
-              "EPISODE",
-              "CHAPTER",
-              "PAGE",
-              "HOUR",
-              "PERCENT"
-            ],
-            "type": "string"
-          },
-          "rating": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 10
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "isFavorite": {
-            "type": "boolean"
-          },
-          "startedAt": {
-            "type": "string",
-            "description": "Если не прислать — проставится автоматически по статусу"
-          },
-          "finishedAt": {
-            "type": "string"
-          }
-        }
-      },
-      "SubscriptionLimitsResponse": {
-        "type": "object",
-        "properties": {
-          "collections": {
-            "type": "number",
-            "nullable": true,
-            "description": "null означает «без ограничений»"
-          },
-          "libraryEntries": {
-            "type": "number",
-            "nullable": true
-          },
-          "aiRequestsPerDay": {
-            "type": "number",
-            "nullable": true
-          }
-        },
-        "required": [
-          "collections",
-          "libraryEntries",
-          "aiRequestsPerDay"
-        ]
-      },
-      "SubscriptionUsageResponse": {
-        "type": "object",
-        "properties": {
-          "collections": {
-            "type": "number"
-          },
-          "libraryEntries": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "collections",
-          "libraryEntries"
-        ]
-      },
-      "SubscriptionResponse": {
-        "type": "object",
-        "properties": {
-          "plan": {
-            "enum": [
-              "FREE",
-              "PRO"
-            ],
-            "type": "string"
-          },
-          "status": {
-            "enum": [
-              "ACTIVE",
-              "TRIALING",
-              "PAST_DUE",
-              "CANCELED",
-              "EXPIRED"
-            ],
-            "type": "string"
-          },
-          "startsAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "endsAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "canceledAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "autoRenew": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "Активна ли подписка прямо сейчас"
-          },
-          "limits": {
-            "$ref": "#/components/schemas/SubscriptionLimitsResponse"
-          },
-          "usage": {
-            "$ref": "#/components/schemas/SubscriptionUsageResponse"
-          }
-        },
-        "required": [
-          "plan",
-          "status",
-          "startsAt",
-          "endsAt",
-          "canceledAt",
-          "autoRenew",
-          "isActive",
-          "limits",
-          "usage"
-        ]
-      },
-      "VerifyPurchaseDto": {
-        "type": "object",
-        "properties": {
-          "provider": {
-            "type": "string",
-            "enum": [
-              "APPLE",
-              "GOOGLE"
-            ]
-          },
-          "token": {
-            "type": "string",
-            "minLength": 4,
-            "maxLength": 4000
-          }
-        },
-        "required": [
-          "provider",
-          "token"
         ]
       },
       "DiscoverItemResponse": {
@@ -3877,6 +3708,596 @@
           "error",
           "path",
           "timestamp"
+        ]
+      },
+      "MyLibraryStatusResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "ON_HOLD",
+              "DROPPED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "ReviewAuthorResponse": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "username",
+          "displayName",
+          "avatarUrl"
+        ]
+      },
+      "ReviewResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ReviewAuthorResponse"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "isPublic",
+          "author",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DiscoverMyStateResponse": {
+        "type": "object",
+        "properties": {
+          "libraryEntry": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MyLibraryStatusResponse"
+              }
+            ]
+          },
+          "review": {
+            "nullable": true,
+            "description": "Включая приватный отзыв и оценку без текста",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "libraryEntry",
+          "review"
+        ]
+      },
+      "ReviewListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewResponse"
+            }
+          },
+          "isHasMore": {
+            "type": "boolean"
+          },
+          "total": {
+            "type": "number",
+            "description": "Сколько всего отзывов под этим фильтром — для подписи «N reviews»"
+          }
+        },
+        "required": [
+          "items",
+          "isHasMore",
+          "total"
+        ]
+      },
+      "MyReviewResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ReviewAuthorResponse"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "$ref": "#/components/schemas/TitleListItemResponse"
+          }
+        },
+        "required": [
+          "id",
+          "rating",
+          "text",
+          "isPublic",
+          "author",
+          "createdAt",
+          "updatedAt",
+          "title"
+        ]
+      },
+      "MyReviewListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyReviewResponse"
+            }
+          },
+          "isHasMore": {
+            "type": "boolean"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "isHasMore",
+          "total"
+        ]
+      },
+      "CreateReviewDto": {
+        "type": "object",
+        "properties": {
+          "titleId": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number",
+            "description": "Оценки везде десятибалльные, клиент показывает их по своей шкале",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "text": {
+            "type": "string",
+            "description": "null очищает текст — отзыв становится просто оценкой",
+            "minLength": 10,
+            "maxLength": 5000
+          },
+          "isPublic": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "titleId",
+          "rating"
+        ]
+      },
+      "ReviewFieldsDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "Оценки везде десятибалльные, клиент показывает их по своей шкале",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "text": {
+            "type": "string",
+            "description": "null очищает текст — отзыв становится просто оценкой",
+            "minLength": 10,
+            "maxLength": 5000
+          },
+          "isPublic": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "rating"
+        ]
+      },
+      "UpdateReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "Оценки везде десятибалльные, клиент показывает их по своей шкале",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "text": {
+            "type": "string",
+            "description": "null очищает текст — отзыв становится просто оценкой",
+            "minLength": 10,
+            "maxLength": 5000
+          },
+          "isPublic": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LibraryEntryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PLANNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "ON_HOLD",
+              "DROPPED"
+            ],
+            "type": "string"
+          },
+          "progress": {
+            "type": "number",
+            "nullable": true
+          },
+          "progressUnit": {
+            "nullable": true,
+            "enum": [
+              "EPISODE",
+              "CHAPTER",
+              "PAGE",
+              "HOUR",
+              "PERCENT"
+            ],
+            "type": "string"
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true,
+            "description": "Оценка из отзыва пользователя на этот тайтл — в библиотеке её нет"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "$ref": "#/components/schemas/TitleListItemResponse"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "progress",
+          "progressUnit",
+          "rating",
+          "note",
+          "isFavorite",
+          "startedAt",
+          "finishedAt",
+          "title",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "LibraryListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryEntryResponse"
+            }
+          },
+          "isHasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "isHasMore"
+        ]
+      },
+      "CreateLibraryEntryDto": {
+        "type": "object",
+        "properties": {
+          "titleId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "ON_HOLD",
+              "DROPPED"
+            ]
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0
+          },
+          "progressUnit": {
+            "type": "string",
+            "enum": [
+              "EPISODE",
+              "CHAPTER",
+              "PAGE",
+              "HOUR",
+              "PERCENT"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "Если не прислать — проставится автоматически по статусу"
+          },
+          "finishedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "titleId"
+        ]
+      },
+      "UpdateLibraryEntryDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "PLANNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "ON_HOLD",
+              "DROPPED"
+            ],
+            "type": "string"
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0
+          },
+          "progressUnit": {
+            "enum": [
+              "EPISODE",
+              "CHAPTER",
+              "PAGE",
+              "HOUR",
+              "PERCENT"
+            ],
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "Если не прислать — проставится автоматически по статусу"
+          },
+          "finishedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SetLibraryStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "PLANNED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "ON_HOLD",
+              "DROPPED"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "SubscriptionLimitsResponse": {
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "number",
+            "nullable": true,
+            "description": "null означает «без ограничений»"
+          },
+          "libraryEntries": {
+            "type": "number",
+            "nullable": true
+          },
+          "aiRequestsPerDay": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "collections",
+          "libraryEntries",
+          "aiRequestsPerDay"
+        ]
+      },
+      "SubscriptionUsageResponse": {
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "number"
+          },
+          "libraryEntries": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "collections",
+          "libraryEntries"
+        ]
+      },
+      "SubscriptionResponse": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "enum": [
+              "FREE",
+              "PRO"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "TRIALING",
+              "PAST_DUE",
+              "CANCELED",
+              "EXPIRED"
+            ],
+            "type": "string"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "canceledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "autoRenew": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Активна ли подписка прямо сейчас"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SubscriptionLimitsResponse"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/SubscriptionUsageResponse"
+          }
+        },
+        "required": [
+          "plan",
+          "status",
+          "startsAt",
+          "endsAt",
+          "canceledAt",
+          "autoRenew",
+          "isActive",
+          "limits",
+          "usage"
+        ]
+      },
+      "VerifyPurchaseDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "APPLE",
+              "GOOGLE"
+            ]
+          },
+          "token": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "provider",
+          "token"
         ]
       },
       "CollectionListItemResponse": {
@@ -4370,188 +4791,6 @@
         "required": [
           "username"
         ]
-      },
-      "ReviewAuthorResponse": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string",
-            "nullable": true
-          },
-          "avatarUrl": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "username",
-          "displayName",
-          "avatarUrl"
-        ]
-      },
-      "ReviewResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "rating": {
-            "type": "number"
-          },
-          "text": {
-            "type": "string",
-            "nullable": true
-          },
-          "isPublic": {
-            "type": "boolean"
-          },
-          "author": {
-            "$ref": "#/components/schemas/ReviewAuthorResponse"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "rating",
-          "text",
-          "isPublic",
-          "author",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ReviewListResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ReviewResponse"
-            }
-          },
-          "isHasMore": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "items",
-          "isHasMore"
-        ]
-      },
-      "MyReviewResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "rating": {
-            "type": "number"
-          },
-          "text": {
-            "type": "string",
-            "nullable": true
-          },
-          "isPublic": {
-            "type": "boolean"
-          },
-          "author": {
-            "$ref": "#/components/schemas/ReviewAuthorResponse"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "title": {
-            "$ref": "#/components/schemas/TitleListItemResponse"
-          }
-        },
-        "required": [
-          "id",
-          "rating",
-          "text",
-          "isPublic",
-          "author",
-          "createdAt",
-          "updatedAt",
-          "title"
-        ]
-      },
-      "MyReviewListResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MyReviewResponse"
-            }
-          },
-          "isHasMore": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "items",
-          "isHasMore"
-        ]
-      },
-      "CreateReviewDto": {
-        "type": "object",
-        "properties": {
-          "titleId": {
-            "type": "string"
-          },
-          "rating": {
-            "type": "number",
-            "description": "Оценки везде десятибалльные, клиент показывает их по своей шкале",
-            "minimum": 1,
-            "maximum": 10
-          },
-          "text": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 5000
-          },
-          "isPublic": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "titleId",
-          "rating"
-        ]
-      },
-      "UpdateReviewDto": {
-        "type": "object",
-        "properties": {
-          "rating": {
-            "type": "number",
-            "description": "Оценки везде десятибалльные, клиент показывает их по своей шкале",
-            "minimum": 1,
-            "maximum": 10
-          },
-          "text": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 5000
-          },
-          "isPublic": {
-            "type": "boolean"
-          }
-        }
       },
       "AiSuggestionResponse": {
         "type": "object",

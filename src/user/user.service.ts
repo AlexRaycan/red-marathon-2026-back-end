@@ -145,31 +145,32 @@ export class UserService {
 
   /** Вкусовой профиль: из чего складывается библиотека пользователя */
   async getTasteStats(userId: string): Promise<TasteStatsResponse> {
-    const [byStatus, aggregate, byType, favoriteGenres] = await Promise.all([
-      this.prisma.libraryEntry.groupBy({
-        by: ['status'],
-        where: { userId },
-        _count: true
-      }),
-      this.prisma.libraryEntry.aggregate({
-        where: { userId },
-        _count: true,
-        _avg: { rating: true }
-      }),
-      this._getCountsByType(userId),
-      this._getFavoriteGenres(userId)
-    ])
+    const [byStatus, totalEntries, ratings, byType, favoriteGenres] =
+      await Promise.all([
+        this.prisma.libraryEntry.groupBy({
+          by: ['status'],
+          where: { userId },
+          _count: true
+        }),
+        this.prisma.libraryEntry.count({ where: { userId } }),
+        this.prisma.review.aggregate({
+          where: { userId },
+          _avg: { rating: true }
+        }),
+        this._getCountsByType(userId),
+        this._getFavoriteGenres(userId)
+      ])
 
     return {
       byType,
       byStatus: Object.fromEntries(
         byStatus.map(({ status, _count }) => [status, _count])
       ),
-      totalEntries: aggregate._count,
+      totalEntries,
       completedCount:
         byStatus.find(({ status }) => status === LibraryStatus.COMPLETED)
           ?._count ?? 0,
-      averageRating: aggregate._avg.rating,
+      averageRating: ratings._avg.rating,
       favoriteGenres
     }
   }
