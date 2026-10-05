@@ -1,6 +1,7 @@
 /// Запись в библиотеке пользователя: связь «юзер ↔ тайтл» с личными данными.
 /// Title — это «Ведьмак 3» вообще, один на всю базу.
-/// LibraryEntry — это «я играю в Ведьмака, 40 часов, оценка 9».
+/// LibraryEntry — это «я играю в Ведьмака, 40 часов».
+/// Оценка сюда не входит — она живёт в Review.
 model LibraryEntry {
   id     String        @id @default(cuid())
   status LibraryStatus @default(PLANNED)
@@ -10,7 +11,6 @@ model LibraryEntry {
   progress     Int?          @default(0)
   progressUnit ProgressUnit? @map("progress_unit")
 
-  rating     Int? // личная оценка 1–10, не путать с Title.rating
   note       String?
   isFavorite Boolean   @default(false) @map("is_favorite")
   startedAt  DateTime? @map("started_at")

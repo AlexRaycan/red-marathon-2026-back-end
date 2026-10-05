@@ -6,7 +6,6 @@ import { LibraryStatus, TitleType } from '../../generated/prisma/enums'
 
 export const LibrarySortEnum = {
   Recent: 'recent',
-  Rating: 'rating',
   Name: 'name'
 } as const
 

@@ -6,6 +6,9 @@ export const EXPO_URL = 'http://localhost:8081'
 export const DEFAULT_TAKE = 20
 export const MAX_TAKE = 100
 
+// Код ошибки Prisma при нарушении уникального индекса
+export const PRISMA_UNIQUE_VIOLATION = 'P2002'
+
 export const SEARCH_SUGGEST_TAKE = 8
 export const SIMILAR_TAKE = 10
 

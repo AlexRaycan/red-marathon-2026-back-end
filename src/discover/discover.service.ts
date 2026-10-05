@@ -7,7 +7,8 @@ import {
   TITLE_DETAILS_CACHE_TTL_MS,
   TRENDING_CACHE_TTL_MS
 } from '../constants/integration.constants'
-import { ExternalSource, TitleType } from '../generated/prisma/enums'
+import { TitleType } from '../generated/prisma/enums'
+import { IntegrationService } from '../integration/integration.service'
 import {
   IExternalTitle,
   ITitleProvider
@@ -16,11 +17,15 @@ import { GoogleBooksProvider } from '../integration/providers/google-books.provi
 import { RawgProvider } from '../integration/providers/rawg.provider'
 import { ShikimoriProvider } from '../integration/providers/shikimori.provider'
 import { TmdbProvider } from '../integration/providers/tmdb.provider'
+import { PrismaService } from '../prisma/prisma.service'
+import { ReviewService } from '../review/review.service'
+import { parseDiscoverKey, toDiscoverKey } from '../utils/discover-key'
 import { toPersonResponse } from '../utils/to-person-response'
 
 import {
   DiscoverDetailsResponse,
-  DiscoverItemResponse
+  DiscoverItemResponse,
+  DiscoverMyStateResponse
 } from './response/discover-response'
 
 // Порядок, в котором типы чередуются в подборке главной
@@ -43,6 +48,9 @@ export class DiscoverService {
 
   constructor(
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private prisma: PrismaService,
+    private readonly integrationService: IntegrationService,
+    private readonly reviewService: ReviewService,
     tmdb: TmdbProvider,
     rawg: RawgProvider,
     googleBooks: GoogleBooksProvider,
@@ -69,7 +77,7 @@ export class DiscoverService {
 
     if (cached) return cached
 
-    const { source, type, externalId } = this._parseKey(key)
+    const { source, type, externalId } = parseDiscoverKey(key)
 
     const provider = this.providers.find(
       provider =>
@@ -84,10 +92,10 @@ export class DiscoverService {
 
     // Недоступный источник вернёт пустой список — страница не ломается
     const similar = await provider.getSimilar(external)
-    const ownKey = this._toKey(external)
+    const card = this._toItem(external)
 
     const details: DiscoverDetailsResponse = {
-      ...this._toItem(external),
+      ...card,
       originalName: external.originalName ?? null,
       description: external.description ?? null,
       ratingCount: external.ratingCount ?? null,
@@ -97,13 +105,39 @@ export class DiscoverService {
       metadata: external.metadata ?? {},
       similar: similar
         .map(item => this._toItem(item))
-        .filter(item => item.key !== ownKey)
+        .filter(item => item.key !== card.key)
         .slice(0, SIMILAR_TAKE)
     }
 
     await this.cache.set(cacheKey, details, TITLE_DETAILS_CACHE_TTL_MS)
 
     return details
+  }
+
+  /** Что пользователь уже сделал с тайтлом. Тайтла у нас нет — значит, ничего */
+  async findMyState(
+    userId: string,
+    key: string
+  ): Promise<DiscoverMyStateResponse> {
+    const { source, type, externalId } = parseDiscoverKey(key)
+
+    const title = await this.integrationService.findImported(
+      source,
+      externalId,
+      type
+    )
+
+    if (!title) return { libraryEntry: null, review: null }
+
+    const [libraryEntry, review] = await Promise.all([
+      this.prisma.libraryEntry.findUnique({
+        where: { userId_titleId: { userId, titleId: title.id } },
+        select: { id: true, status: true }
+      }),
+      this.reviewService.findMineByTitle(userId, title.id)
+    ])
+
+    return { libraryEntry, review }
   }
 
   // Приватные хелперы
@@ -156,7 +190,11 @@ export class DiscoverService {
 
   private _toItem(item: IExternalTitle): DiscoverItemResponse {
     return {
-      key: this._toKey(item),
+      key: toDiscoverKey({
+        source: item.externalSource,
+        type: item.type,
+        externalId: item.externalId
+      }),
       externalId: item.externalId,
       externalSource: item.externalSource,
       type: item.type,
@@ -165,47 +203,6 @@ export class DiscoverService {
       releaseDate: item.releaseDate ?? null,
       rating: item.rating ?? null,
       genres: item.genres
-    }
-  }
-
-  /**
-   * Ключ собирает всё, что нужно, чтобы найти тайтл во внешнем API:
-   * источник, тип (TMDB хранит фильмы и сериалы раздельно) и внешний id.
-   * Регистр меняем только у источника и типа: id книг Google
-   * регистрозависимый — `XdMbTkWsFeMC` в нижнем регистре даёт 404
-   */
-  private _toKey(item: IExternalTitle): string {
-    const prefix = `${item.externalSource}-${item.type}`.toLowerCase()
-
-    return `${prefix}-${item.externalId}`
-  }
-
-  /**
-   * В источнике и типе дефисов нет, а в id книг Google бывают —
-   * поэтому всё после второго дефиса считаем id
-   */
-  private _parseKey(key: string): {
-    source: ExternalSource
-    type: TitleType
-    externalId: string
-  } {
-    const [rawSource = '', rawType = '', ...rest] = key.split('-')
-
-    const source = rawSource.toUpperCase()
-    const type = rawType.toUpperCase()
-    const externalId = rest.join('-')
-
-    const isValid =
-      (Object.values(ExternalSource) as string[]).includes(source) &&
-      (Object.values(TitleType) as string[]).includes(type) &&
-      Boolean(externalId)
-
-    if (!isValid) throw new NotFoundException('Title not found')
-
-    return {
-      source: source as ExternalSource,
-      type: type as TitleType,
-      externalId
     }
   }
 }

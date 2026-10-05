@@ -10,7 +10,7 @@ import {
   Post,
   Query
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -64,7 +64,7 @@ export class CollectionController {
 
   @Post()
   @Auth()
-  @ApiOkResponse({ type: CollectionResponse })
+  @ApiCreatedResponse({ type: CollectionResponse })
   create(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateCollectionDto

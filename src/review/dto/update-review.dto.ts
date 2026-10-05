@@ -1,8 +1,11 @@
-import { OmitType, PartialType } from '@nestjs/swagger'
+import { PartialType } from '@nestjs/swagger'
 
-import { CreateReviewDto } from './create-review.dto'
+import { ReviewFieldsDto } from './review-fields.dto'
 
-/** titleId менять нельзя — это отзыв на другой тайтл */
-export class UpdateReviewDto extends PartialType(
-  OmitType(CreateReviewDto, ['titleId'] as const)
-) {}
+/**
+ * skipNullProperties: false — поле можно не прислать, но null проходит
+ * только там, где он явно разрешён (text)
+ */
+export class UpdateReviewDto extends PartialType(ReviewFieldsDto, {
+  skipNullProperties: false
+}) {}

@@ -120,22 +120,29 @@ export class AiService {
 
   /** Что модель узнаёт о пользователе. В промпт уходит только это */
   private async _buildTasteContext(userId: string): Promise<ITasteContext> {
-    const entries = await this.prisma.libraryEntry.findMany({
+    const rows = await this.prisma.libraryEntry.findMany({
       where: { userId },
       take: AI_TASTE_SAMPLE_SIZE * 3,
       orderBy: { updatedAt: 'desc' },
       select: {
         status: true,
-        rating: true,
         title: {
           select: {
             name: true,
             type: true,
-            genres: { select: { name: true } }
+            genres: { select: { name: true } },
+            reviews: { where: { userId }, select: { rating: true } }
           }
         }
       }
     })
+
+    // Оценка живёт в отзыве: у пользователя на тайтл он максимум один
+    const entries = rows.map(({ status, title: { reviews, ...title } }) => ({
+      status,
+      title,
+      rating: reviews[0]?.rating ?? null
+    }))
 
     const toBrief = (entry: (typeof entries)[number]): ITitleBrief => ({
       name: entry.title.name,

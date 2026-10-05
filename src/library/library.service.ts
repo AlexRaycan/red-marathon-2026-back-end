@@ -7,50 +7,32 @@ import {
 import { FREE_PLAN_LIMITS } from '../constants/app.constants'
 import { Prisma } from '../generated/prisma/client'
 import { LibraryStatus } from '../generated/prisma/enums'
+import { IntegrationService } from '../integration/integration.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { SubscriptionService } from '../subscription/subscription.service'
+import { parseDiscoverKey } from '../utils/discover-key'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
 
 import { CreateLibraryEntryDto } from './dto/create-library-entry.dto'
 import { LibraryQueryDto, LibrarySortEnum } from './dto/library-query.dto'
+import { SetLibraryStatusDto } from './dto/set-library-status.dto'
 import { UpdateLibraryEntryDto } from './dto/update-library-entry.dto'
 import {
   LibraryEntryResponse,
   LibraryListResponse
 } from './response/library-response'
 
+type TLibraryEntryRow = Prisma.LibraryEntryGetPayload<{
+  select: ReturnType<LibraryService['_getSelectEntry']>
+}>
+
 @Injectable()
 export class LibraryService {
   constructor(
     private prisma: PrismaService,
-    private readonly subscriptionService: SubscriptionService
+    private readonly subscriptionService: SubscriptionService,
+    private readonly integrationService: IntegrationService
   ) {}
-
-  private SELECT_ENTRY = {
-    id: true,
-    status: true,
-    progress: true,
-    progressUnit: true,
-    rating: true,
-    note: true,
-    isFavorite: true,
-    startedAt: true,
-    finishedAt: true,
-    createdAt: true,
-    updatedAt: true,
-    title: {
-      select: {
-        id: true,
-        type: true,
-        name: true,
-        slug: true,
-        coverUrl: true,
-        releaseDate: true,
-        rating: true,
-        ratingCount: true
-      }
-    }
-  }
 
   async findAll(
     userId: string,
@@ -64,13 +46,13 @@ export class LibraryService {
         take: query.take,
         where,
         orderBy: this._getOrderBy(query.sort),
-        select: this.SELECT_ENTRY
+        select: this._getSelectEntry(userId)
       }),
       this.prisma.libraryEntry.count({ where })
     ])
 
     return {
-      items,
+      items: items.map(item => this._toResponse(item)),
       isHasMore: isHasMorePagination(totalCount, query.skip, query.take)
     }
   }
@@ -80,18 +62,18 @@ export class LibraryService {
     userId: string,
     titleId: string
   ): Promise<LibraryEntryResponse | null> {
-    return this.prisma.libraryEntry.findUnique({
+    const entry = await this.prisma.libraryEntry.findUnique({
       where: { userId_titleId: { userId, titleId } },
-      select: this.SELECT_ENTRY
+      select: this._getSelectEntry(userId)
     })
+
+    return entry ? this._toResponse(entry) : null
   }
 
   async create(
     userId: string,
     dto: CreateLibraryEntryDto
   ): Promise<LibraryEntryResponse> {
-    await this._ensureWithinPlanLimit(userId)
-
     const title = await this.prisma.title.findUnique({
       where: { id: dto.titleId },
       select: { id: true }
@@ -107,17 +89,21 @@ export class LibraryService {
     if (existing)
       throw new BadRequestException('Title is already in your library')
 
+    await this._ensureWithinPlanLimit(this.prisma, userId)
+
     const { titleId, startedAt, finishedAt, ...rest } = dto
 
-    return this.prisma.libraryEntry.create({
+    const entry = await this.prisma.libraryEntry.create({
       data: {
         ...rest,
         ...this._getDateFields(dto),
         userId,
         titleId
       },
-      select: this.SELECT_ENTRY
+      select: this._getSelectEntry(userId)
     })
+
+    return this._toResponse(entry)
   }
 
   async update(
@@ -129,13 +115,66 @@ export class LibraryService {
 
     const { startedAt, finishedAt, ...rest } = dto
 
-    return this.prisma.libraryEntry.update({
+    const updated = await this.prisma.libraryEntry.update({
       where: { id: entry.id },
       data: {
         ...rest,
         ...this._getDateFields(dto, entry.startedAt)
       },
-      select: this.SELECT_ENTRY
+      select: this._getSelectEntry(userId)
+    })
+
+    return this._toResponse(updated)
+  }
+
+  /**
+   * Статус по ключу витрины — тайтл сохранится у нас вместе с записью.
+   * Повторный вызов не ошибка: запись уже есть — меняем ей статус
+   */
+  async setStatusByDiscoverKey(
+    userId: string,
+    key: string,
+    dto: SetLibraryStatusDto
+  ): Promise<LibraryEntryResponse> {
+    const { source, type, externalId } = parseDiscoverKey(key)
+
+    const saveTitle = await this.integrationService.prepareImport(
+      source,
+      externalId,
+      type
+    )
+
+    return this.prisma.$transaction(async prisma => {
+      const { id: titleId } = await saveTitle(prisma)
+
+      const existing = await prisma.libraryEntry.findUnique({
+        where: { userId_titleId: { userId, titleId } },
+        select: { startedAt: true }
+      })
+
+      if (!existing) await this._ensureWithinPlanLimit(prisma, userId)
+
+      const data = {
+        status: dto.status,
+        ...this._getDateFields(dto, existing?.startedAt)
+      }
+
+      // upsert, а не create: параллельный PUT того же тайтла обновит
+      // запись первого, а не упадёт на уникальном индексе. Полную запись
+      // читаем отдельно — вложенная выборка в upsert отключает ON CONFLICT
+      const { id } = await prisma.libraryEntry.upsert({
+        where: { userId_titleId: { userId, titleId } },
+        create: { ...data, userId, titleId },
+        update: data,
+        select: { id: true }
+      })
+
+      const entry = await prisma.libraryEntry.findUniqueOrThrow({
+        where: { id },
+        select: this._getSelectEntry(userId)
+      })
+
+      return this._toResponse(entry)
     })
   }
 
@@ -147,13 +186,75 @@ export class LibraryService {
     return true
   }
 
+  /** Отзыв не трогаем: оценка остаётся, даже если тайтл убрали из библиотеки */
+  async deleteByDiscoverKey(userId: string, key: string): Promise<boolean> {
+    const { source, type, externalId } = parseDiscoverKey(key)
+
+    const title = await this.integrationService.findImported(
+      source,
+      externalId,
+      type
+    )
+
+    // deleteMany не падает, если записи нет: повторное удаление — не ошибка
+    if (title) {
+      await this.prisma.libraryEntry.deleteMany({
+        where: { userId, titleId: title.id }
+      })
+    }
+
+    return true
+  }
+
   // Приватные хелперы
 
+  /**
+   * Оценка живёт в отзыве, а не в записи библиотеки. Подтягиваем её
+   * в той же выборке: отзыв у пользователя на тайтл максимум один
+   */
+  private _getSelectEntry(userId: string) {
+    return {
+      id: true,
+      status: true,
+      progress: true,
+      progressUnit: true,
+      note: true,
+      isFavorite: true,
+      startedAt: true,
+      finishedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      title: {
+        select: {
+          id: true,
+          type: true,
+          name: true,
+          slug: true,
+          coverUrl: true,
+          releaseDate: true,
+          rating: true,
+          ratingCount: true,
+          reviews: { where: { userId }, select: { rating: true } }
+        }
+      }
+    } satisfies Prisma.LibraryEntrySelect
+  }
+
+  private _toResponse({
+    title: { reviews, ...title },
+    ...entry
+  }: TLibraryEntryRow): LibraryEntryResponse {
+    return { ...entry, title, rating: reviews[0]?.rating ?? null }
+  }
+
   /** На бесплатном тарифе размер библиотеки ограничен */
-  private async _ensureWithinPlanLimit(userId: string): Promise<void> {
+  private async _ensureWithinPlanLimit(
+    prisma: Prisma.TransactionClient,
+    userId: string
+  ): Promise<void> {
     if (await this.subscriptionService.isProActive(userId)) return
 
-    const count = await this.prisma.libraryEntry.count({ where: { userId } })
+    const count = await prisma.libraryEntry.count({ where: { userId } })
 
     if (count >= FREE_PLAN_LIMITS.libraryEntries) {
       throw new BadRequestException(
@@ -232,7 +333,6 @@ export class LibraryService {
   private _getOrderBy(
     sort?: LibrarySortEnum
   ): Prisma.LibraryEntryOrderByWithRelationInput {
-    if (sort === LibrarySortEnum.Rating) return { rating: 'desc' }
     if (sort === LibrarySortEnum.Name) return { title: { name: 'asc' } }
 
     return { updatedAt: 'desc' }

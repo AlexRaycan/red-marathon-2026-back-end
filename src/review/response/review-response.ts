@@ -19,6 +19,8 @@ export class ReviewResponse {
 export class ReviewListResponse {
   items: ReviewResponse[]
   isHasMore: boolean
+  /** Сколько всего отзывов под этим фильтром — для подписи «N reviews» */
+  total: number
 }
 
 /** Свой отзыв — с тайтлом, для списка «мои отзывы» */
@@ -29,4 +31,5 @@ export class MyReviewResponse extends ReviewResponse {
 export class MyReviewListResponse {
   items: MyReviewResponse[]
   isHasMore: boolean
+  total: number
 }

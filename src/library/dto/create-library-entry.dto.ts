@@ -6,7 +6,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
   Min
 } from 'class-validator'
@@ -30,13 +29,6 @@ export class CreateLibraryEntryDto {
   @IsOptional()
   @IsEnum(ProgressUnit, { message: 'Unknown progress unit' })
   readonly progressUnit?: ProgressUnit
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1, { message: 'Rating must be between 1 and 10' })
-  @Max(10, { message: 'Rating must be between 1 and 10' })
-  readonly rating?: number
 
   @IsOptional()
   @IsString()

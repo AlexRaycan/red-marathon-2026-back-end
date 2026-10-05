@@ -8,15 +8,17 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 
 import { CreateLibraryEntryDto } from './dto/create-library-entry.dto'
 import { LibraryQueryDto } from './dto/library-query.dto'
+import { SetLibraryStatusDto } from './dto/set-library-status.dto'
 import { UpdateLibraryEntryDto } from './dto/update-library-entry.dto'
 import { LibraryService } from './library.service'
 import {
@@ -52,7 +54,7 @@ export class LibraryController {
 
   @Post()
   @Auth()
-  @ApiOkResponse({ type: LibraryEntryResponse })
+  @ApiCreatedResponse({ type: LibraryEntryResponse })
   create(
     @CurrentUser('id') userId: string,
     @Body() dto: CreateLibraryEntryDto
@@ -71,6 +73,18 @@ export class LibraryController {
     return this.libraryService.update(userId, id, dto)
   }
 
+  /** Статус по ключу витрины: `tmdb-movie-603`. Нет записи — создаст */
+  @Put('discover/:key')
+  @Auth()
+  @ApiOkResponse({ type: LibraryEntryResponse })
+  setStatusByDiscoverKey(
+    @CurrentUser('id') userId: string,
+    @Param('key') key: string,
+    @Body() dto: SetLibraryStatusDto
+  ): Promise<LibraryEntryResponse> {
+    return this.libraryService.setStatusByDiscoverKey(userId, key, dto)
+  }
+
   @Delete(':id')
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -79,5 +93,15 @@ export class LibraryController {
     @Param('id') id: string
   ): Promise<boolean> {
     return this.libraryService.delete(userId, id)
+  }
+
+  @Delete('discover/:key')
+  @Auth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteByDiscoverKey(
+    @CurrentUser('id') userId: string,
+    @Param('key') key: string
+  ): Promise<boolean> {
+    return this.libraryService.deleteByDiscoverKey(userId, key)
   }
 }

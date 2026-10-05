@@ -66,14 +66,7 @@ export class TitleService {
   }
 
   async findBySlug(slug: string): Promise<TitleResponse> {
-    const title = await this.prisma.title.findUnique({
-      where: { slug },
-      select: this.SELECT_DETAILS
-    })
-
-    if (!title || title.status !== TitleStatus.PUBLISHED) {
-      throw new NotFoundException('Title not found')
-    }
+    const title = await this.findPublishedBySlug(slug, this.SELECT_DETAILS)
 
     const { externalId, externalSource, ...rest } = title
 
@@ -99,6 +92,22 @@ export class TitleService {
       creators: (details?.creators ?? []).map(toPersonResponse),
       metadata: details?.metadata ?? {}
     }
+  }
+
+  /** Черновики и архив снаружи не видны — ни по slug, ни в его отзывах */
+  // Тип ответа выводит Prisma из select: вручную его не описать
+  async findPublishedBySlug<T extends Prisma.TitleSelect>(
+    slug: string,
+    select: T
+  ) {
+    const title = await this.prisma.title.findUnique({
+      where: { slug, status: TitleStatus.PUBLISHED },
+      select
+    })
+
+    if (!title) throw new NotFoundException('Title not found')
+
+    return title
   }
 
   /** Сквозной поиск по всем типам — им же пользуется расширение */
