@@ -39,7 +39,7 @@ export class DiscoverController {
     return this.discoverService.findByKey(key)
   }
 
-  /** Статус в библиотеке и свой отзыв — одним запросом для детальной страницы */
+  /** Статус в библиотеке, свой отзыв и коллекции для детальной страницы */
   @Get(':key/me')
   @Auth()
   @ApiOkResponse({ type: DiscoverMyStateResponse })

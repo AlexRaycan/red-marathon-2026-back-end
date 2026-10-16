@@ -19,5 +19,7 @@ export class LibraryEntryResponse {
 
 export class LibraryListResponse {
   items: LibraryEntryResponse[]
+  /** Число записей по текущим фильтрам, без учёта пагинации */
+  total: number
   isHasMore: boolean
 }

@@ -7,6 +7,10 @@ import {
 } from '../constants/ai.constants'
 import { LibraryStatus, TitleType } from '../generated/prisma/enums'
 import { PrismaService } from '../prisma/prisma.service'
+import {
+  TITLE_LIST_ITEM_SELECT,
+  toTitleListItemResponse
+} from '../title/title-list-item'
 
 import { PickerDto } from './dto/picker.dto'
 import { ITasteContext, ITitleBrief } from './interfaces/ai.interface'
@@ -34,17 +38,6 @@ export class AiService {
     private prisma: PrismaService,
     private readonly openRouter: OpenRouterService
   ) {}
-
-  private SELECT_TITLE = {
-    id: true,
-    type: true,
-    name: true,
-    slug: true,
-    coverUrl: true,
-    releaseDate: true,
-    rating: true,
-    ratingCount: true
-  }
 
   async getRecommendations(userId: string): Promise<AiSuggestionsResponse> {
     const taste = await this._buildTasteContext(userId)
@@ -191,15 +184,19 @@ export class AiService {
       .slice(0, AI_RECOMMENDATIONS_COUNT)
 
     return Promise.all(
-      items.map(async item => ({
-        name: item.name as string,
-        type: item.type as TitleType,
-        reason: item.reason ?? '',
-        title: await this.prisma.title.findFirst({
+      items.map(async item => {
+        const title = await this.prisma.title.findFirst({
           where: { name: { equals: item.name, mode: 'insensitive' } },
-          select: this.SELECT_TITLE
+          select: TITLE_LIST_ITEM_SELECT
         })
-      }))
+
+        return {
+          name: item.name as string,
+          type: item.type as TitleType,
+          reason: item.reason ?? '',
+          title: title ? toTitleListItemResponse(title) : null
+        }
+      })
     )
   }
 

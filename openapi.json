@@ -833,14 +833,19 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Поиск во внешних API — то, чего ещё нет в нашей базе",
+        "summary": "Публичный поиск во внешних API с лимитом запросов на IP",
         "tags": [
           "external"
         ]
@@ -991,7 +996,7 @@
             "bearer": []
           }
         ],
-        "summary": "Статус в библиотеке и свой отзыв — одним запросом для детальной страницы",
+        "summary": "Статус в библиотеке, свой отзыв и коллекции для детальной страницы",
         "tags": [
           "discover"
         ]
@@ -2157,6 +2162,83 @@
         ]
       }
     },
+    "/collections/{id}/titles/discover/{key}": {
+      "put": {
+        "operationId": "collection_addTitleByDiscoverKey",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "collections"
+        ]
+      },
+      "delete": {
+        "operationId": "collection_removeTitleByDiscoverKey",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "collections"
+        ]
+      }
+    },
     "/collections/{id}/share": {
       "post": {
         "operationId": "collection_share",
@@ -3148,6 +3230,11 @@
           "id": {
             "type": "string"
           },
+          "key": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ключ витрины; null только у тайтла без внешнего источника"
+          },
           "type": {
             "enum": [
               "GAME",
@@ -3182,6 +3269,7 @@
         },
         "required": [
           "id",
+          "key",
           "type",
           "name",
           "slug",
@@ -3283,6 +3371,11 @@
           "id": {
             "type": "string"
           },
+          "key": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ключ витрины; null только у тайтла без внешнего источника"
+          },
           "type": {
             "enum": [
               "GAME",
@@ -3375,6 +3468,7 @@
         },
         "required": [
           "id",
+          "key",
           "type",
           "name",
           "slug",
@@ -3397,6 +3491,9 @@
       "ExternalTitleResponse": {
         "type": "object",
         "properties": {
+          "key": {
+            "type": "string"
+          },
           "externalId": {
             "type": "string"
           },
@@ -3449,11 +3546,39 @@
           }
         },
         "required": [
+          "key",
           "externalId",
           "externalSource",
           "type",
           "name",
           "genres"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number"
+          },
+          "message": {
+            "type": "object"
+          },
+          "error": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "error",
+          "path",
+          "timestamp"
         ]
       },
       "ImportTitleDto": {
@@ -3683,33 +3808,6 @@
           "similar"
         ]
       },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number"
-          },
-          "message": {
-            "type": "object"
-          },
-          "error": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "message",
-          "error",
-          "path",
-          "timestamp"
-        ]
-      },
       "MyLibraryStatusResponse": {
         "type": "object",
         "properties": {
@@ -3812,11 +3910,19 @@
                 "$ref": "#/components/schemas/ReviewResponse"
               }
             ]
+          },
+          "collectionIds": {
+            "description": "Только коллекции текущего пользователя, включая приватные",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "libraryEntry",
-          "review"
+          "review",
+          "collectionIds"
         ]
       },
       "ReviewListResponse": {
@@ -4065,12 +4171,17 @@
               "$ref": "#/components/schemas/LibraryEntryResponse"
             }
           },
+          "total": {
+            "type": "number",
+            "description": "Число записей по текущим фильтрам, без учёта пагинации"
+          },
           "isHasMore": {
             "type": "boolean"
           }
         },
         "required": [
           "items",
+          "total",
           "isHasMore"
         ]
       },

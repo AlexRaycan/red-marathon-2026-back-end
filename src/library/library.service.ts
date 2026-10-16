@@ -10,6 +10,10 @@ import { LibraryStatus } from '../generated/prisma/enums'
 import { IntegrationService } from '../integration/integration.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { SubscriptionService } from '../subscription/subscription.service'
+import {
+  TITLE_LIST_ITEM_SELECT,
+  toTitleListItemResponse
+} from '../title/title-list-item'
 import { parseDiscoverKey } from '../utils/discover-key'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
 
@@ -40,19 +44,24 @@ export class LibraryService {
   ): Promise<LibraryListResponse> {
     const where = this._getFilters(userId, query)
 
-    const [items, totalCount] = await Promise.all([
-      this.prisma.libraryEntry.findMany({
-        skip: query.skip,
-        take: query.take,
-        where,
-        orderBy: this._getOrderBy(query.sort),
-        select: this._getSelectEntry(userId)
-      }),
-      this.prisma.libraryEntry.count({ where })
-    ])
+    const [items, totalCount] = await this.prisma.$transaction(
+      [
+        this.prisma.libraryEntry.findMany({
+          skip: query.skip,
+          take: query.take,
+          where,
+          orderBy: this._getOrderBy(query.sort),
+          select: this._getSelectEntry(userId)
+        }),
+        this.prisma.libraryEntry.count({ where })
+      ],
+      // Выдача и счётчик видят один снимок даже при параллельной записи
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+    )
 
     return {
       items: items.map(item => this._toResponse(item)),
+      total: totalCount,
       isHasMore: isHasMorePagination(totalCount, query.skip, query.take)
     }
   }
@@ -226,14 +235,7 @@ export class LibraryService {
       updatedAt: true,
       title: {
         select: {
-          id: true,
-          type: true,
-          name: true,
-          slug: true,
-          coverUrl: true,
-          releaseDate: true,
-          rating: true,
-          ratingCount: true,
+          ...TITLE_LIST_ITEM_SELECT,
           reviews: { where: { userId }, select: { rating: true } }
         }
       }
@@ -244,7 +246,11 @@ export class LibraryService {
     title: { reviews, ...title },
     ...entry
   }: TLibraryEntryRow): LibraryEntryResponse {
-    return { ...entry, title, rating: reviews[0]?.rating ?? null }
+    return {
+      ...entry,
+      title: toTitleListItemResponse(title),
+      rating: reviews[0]?.rating ?? null
+    }
   }
 
   /** На бесплатном тарифе размер библиотеки ограничен */

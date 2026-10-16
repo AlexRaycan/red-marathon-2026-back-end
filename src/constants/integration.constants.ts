@@ -28,6 +28,9 @@ export const SHIKIMORI_API_URL = 'https://shikimori.io/api'
 
 export const EXTERNAL_SEARCH_TAKE = 10
 export const EXTERNAL_REQUEST_TIMEOUT_MS = 8000
+// Публичный поиск расходует квоты источников: лимит на IP
+export const EXTERNAL_SEARCH_RATE_LIMIT = 30
+export const EXTERNAL_SEARCH_RATE_TTL_MS = 60 * 1000
 
 // Кеш поиска в памяти процесса: десять человек ищут одно и то же —
 // наружу уходит один запрос

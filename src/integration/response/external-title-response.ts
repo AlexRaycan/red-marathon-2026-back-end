@@ -2,6 +2,7 @@ import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 
 /** Результат поиска во внешнем API — ещё не сохранён у нас */
 export class ExternalTitleResponse {
+  key: string
   externalId: string
   externalSource: ExternalSource
   type: TitleType

@@ -10,6 +10,7 @@ import {
 import { Prisma } from '../generated/prisma/client'
 import { ExternalSource, TitleType } from '../generated/prisma/enums'
 import { PrismaService } from '../prisma/prisma.service'
+import { toDiscoverKey } from '../utils/discover-key'
 import { generateSlug } from '../utils/generate-slug'
 
 import {
@@ -21,7 +22,10 @@ import { GoogleBooksProvider } from './providers/google-books.provider'
 import { RawgProvider } from './providers/rawg.provider'
 import { ShikimoriProvider } from './providers/shikimori.provider'
 import { TmdbProvider } from './providers/tmdb.provider'
-import { ImportedTitleResponse } from './response/external-title-response'
+import {
+  ExternalTitleResponse,
+  ImportedTitleResponse
+} from './response/external-title-response'
 
 /** Сохранение тайтла, отложенное до транзакции вызывающего */
 export type TSaveTitle = (
@@ -47,10 +51,13 @@ export class IntegrationService {
    * Поиск во внешних источниках. Провайдеры опрашиваются параллельно,
    * упавший источник не ломает выдачу остальных.
    */
-  async search(query: string, types?: TitleType[]): Promise<IExternalTitle[]> {
+  async search(
+    query: string,
+    types?: TitleType[]
+  ): Promise<ExternalTitleResponse[]> {
     const cacheKey = this._getCacheKey(query, types)
 
-    const cached = await this.cache.get<IExternalTitle[]>(cacheKey)
+    const cached = await this.cache.get<ExternalTitleResponse[]>(cacheKey)
 
     if (cached) return cached
 
@@ -67,7 +74,16 @@ export class IntegrationService {
     // Сначала популярное: по неточному названию это чаще нужный тайтл
     const items = results
       .flat()
+      .filter(item => !types?.length || types.includes(item.type))
       .sort((a, b) => (b.ratingCount ?? 0) - (a.ratingCount ?? 0))
+      .map(item => ({
+        ...item,
+        key: toDiscoverKey({
+          source: item.externalSource,
+          type: item.type,
+          externalId: item.externalId
+        })
+      }))
 
     // Пустую выдачу не кешируем: она чаще означает недоступный источник,
     // а не отсутствие результата
