@@ -15,6 +15,10 @@ import {
   TitleListResponse,
   TitleResponse
 } from './response/title-response'
+import {
+  TITLE_LIST_ITEM_SELECT,
+  toTitleListItemResponse
+} from './title-list-item'
 
 @Injectable()
 export class TitleService {
@@ -23,24 +27,10 @@ export class TitleService {
     private readonly integrationService: IntegrationService
   ) {}
 
-  // Карточка списка: тяжёлые поля не тянем
-  private SELECT_LIST_ITEM = {
-    id: true,
-    type: true,
-    name: true,
-    slug: true,
-    coverUrl: true,
-    releaseDate: true,
-    rating: true,
-    ratingCount: true
-  }
-
   private SELECT_DETAILS = {
-    ...this.SELECT_LIST_ITEM,
+    ...TITLE_LIST_ITEM_SELECT,
     status: true,
     originalName: true,
-    externalId: true,
-    externalSource: true,
     createdAt: true,
     genres: { select: { id: true, name: true, slug: true } }
   }
@@ -54,13 +44,13 @@ export class TitleService {
         take: query.take,
         where,
         orderBy: this._getOrderBy(query.sort),
-        select: this.SELECT_LIST_ITEM
+        select: TITLE_LIST_ITEM_SELECT
       }),
       this.prisma.title.count({ where })
     ])
 
     return {
-      items,
+      items: items.map(toTitleListItemResponse),
       isHasMore: isHasMorePagination(totalCount, query.skip, query.take)
     }
   }
@@ -85,6 +75,7 @@ export class TitleService {
 
     return {
       ...rest,
+      ...toTitleListItemResponse(title),
       similar,
       description: details?.description ?? null,
       ageRating: details?.ageRating ?? null,
@@ -125,28 +116,30 @@ export class TitleService {
         where,
         // Сначала популярное: по неточному названию это чаще нужный тайтл
         orderBy: [{ ratingCount: 'desc' }, { rating: 'desc' }],
-        select: this.SELECT_LIST_ITEM
+        select: TITLE_LIST_ITEM_SELECT
       }),
       this.prisma.title.count({ where })
     ])
 
     return {
-      items,
+      items: items.map(toTitleListItemResponse),
       isHasMore: isHasMorePagination(totalCount, query.skip, query.take)
     }
   }
 
   /** Подсказки в поисковой строке — короткий список, без счётчика */
   async suggest(q: string): Promise<TitleListItemResponse[]> {
-    return this.prisma.title.findMany({
+    const items = await this.prisma.title.findMany({
       where: {
         status: TitleStatus.PUBLISHED,
         ...this._getSearchTermFilter(q)
       },
       take: SEARCH_SUGGEST_TAKE,
       orderBy: { ratingCount: 'desc' },
-      select: this.SELECT_LIST_ITEM
+      select: TITLE_LIST_ITEM_SELECT
     })
+
+    return items.map(toTitleListItemResponse)
   }
 
   // Приватные хелперы
@@ -156,7 +149,7 @@ export class TitleService {
     id: string
     genres: { id: string }[]
   }): Promise<TitleListItemResponse[]> {
-    return this.prisma.title.findMany({
+    const items = await this.prisma.title.findMany({
       where: {
         id: { not: title.id },
         status: TitleStatus.PUBLISHED,
@@ -164,8 +157,10 @@ export class TitleService {
       },
       take: SIMILAR_TAKE,
       orderBy: [{ ratingCount: 'desc' }, { rating: 'desc' }],
-      select: this.SELECT_LIST_ITEM
+      select: TITLE_LIST_ITEM_SELECT
     })
+
+    return items.map(toTitleListItemResponse)
   }
 
   private _getFilters(query: TitleQueryDto): Prisma.TitleWhereInput {

@@ -7,11 +7,17 @@ import {
 import { Prisma } from '../generated/prisma/client'
 import { NotificationEntity, NotificationType } from '../generated/prisma/enums'
 import { FriendshipService } from '../friendship/friendship.service'
+import { IntegrationService } from '../integration/integration.service'
 import { NotificationService } from '../notification/notification.service'
 import { SubscriptionService } from '../subscription/subscription.service'
 import { FREE_PLAN_LIMITS } from '../constants/app.constants'
 import { PrismaService } from '../prisma/prisma.service'
+import {
+  TITLE_LIST_ITEM_SELECT,
+  toTitleListItemResponse
+} from '../title/title-list-item'
 import { generateSlug } from '../utils/generate-slug'
+import { parseDiscoverKey } from '../utils/discover-key'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
 
 import { PaginationQueryDto } from '../base/pagination-query.dto'
@@ -32,19 +38,9 @@ export class CollectionService {
     private prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly friendshipService: FriendshipService,
-    private readonly subscriptionService: SubscriptionService
+    private readonly subscriptionService: SubscriptionService,
+    private readonly integrationService: IntegrationService
   ) {}
-
-  private SELECT_TITLE = {
-    id: true,
-    type: true,
-    name: true,
-    slug: true,
-    coverUrl: true,
-    releaseDate: true,
-    rating: true,
-    ratingCount: true
-  }
 
   private SELECT_LIST_ITEM = {
     id: true,
@@ -92,7 +88,7 @@ export class CollectionService {
       select: {
         ...this.SELECT_LIST_ITEM,
         userId: true,
-        titles: { select: this.SELECT_TITLE }
+        titles: { select: TITLE_LIST_ITEM_SELECT }
       }
     })
 
@@ -102,7 +98,10 @@ export class CollectionService {
 
     const { userId: _, titles, ...rest } = collection
 
-    return { ...this._toListItem(rest), titles }
+    return {
+      ...this._toListItem(rest),
+      titles: titles.map(toTitleListItemResponse)
+    }
   }
 
   /** Публичная подборка по ссылке — открывается без авторизации */
@@ -119,7 +118,7 @@ export class CollectionService {
         coverUrl: true,
         createdAt: true,
         _count: { select: { titles: true } },
-        titles: { select: this.SELECT_TITLE },
+        titles: { select: TITLE_LIST_ITEM_SELECT },
         user: {
           select: {
             username: true,
@@ -132,10 +131,11 @@ export class CollectionService {
     // Приватную отдаём как 404, чтобы нельзя было перебором найти чужие
     if (!collection) throw new NotFoundException('Collection not found')
 
-    const { user, _count, ...rest } = collection
+    const { user, _count, titles, ...rest } = collection
 
     return {
       ...rest,
+      titles: titles.map(toTitleListItemResponse),
       titlesCount: _count.titles,
       owner: {
         username: user.username,
@@ -159,13 +159,16 @@ export class CollectionService {
       },
       select: {
         ...this.SELECT_LIST_ITEM,
-        titles: { select: this.SELECT_TITLE }
+        titles: { select: TITLE_LIST_ITEM_SELECT }
       }
     })
 
     const { titles, ...rest } = collection
 
-    return { ...this._toListItem(rest), titles }
+    return {
+      ...this._toListItem(rest),
+      titles: titles.map(toTitleListItemResponse)
+    }
   }
 
   async update(
@@ -195,11 +198,15 @@ export class CollectionService {
   ): Promise<CollectionResponse> {
     await this._ensureIsOwner(userId, id)
 
-    await this.prisma.collection.update({
-      where: { id },
-      data: {
-        titles: { connect: dto.titleIds.map(titleId => ({ id: titleId })) }
-      }
+    await this.prisma.$transaction(async prisma => {
+      await this._ensureTitlesExist(prisma, dto.titleIds)
+
+      await prisma.collection.update({
+        where: { id, userId },
+        data: {
+          titles: { connect: dto.titleIds.map(titleId => ({ id: titleId })) }
+        }
+      })
     })
 
     return this.findById(userId, id)
@@ -212,14 +219,77 @@ export class CollectionService {
   ): Promise<CollectionResponse> {
     await this._ensureIsOwner(userId, id)
 
-    await this.prisma.collection.update({
-      where: { id },
-      data: {
-        titles: { disconnect: dto.titleIds.map(titleId => ({ id: titleId })) }
-      }
+    await this.prisma.$transaction(async prisma => {
+      await this._ensureTitlesExist(prisma, dto.titleIds)
+
+      await prisma.collection.update({
+        where: { id, userId },
+        data: {
+          titles: { disconnect: dto.titleIds.map(titleId => ({ id: titleId })) }
+        }
+      })
     })
 
     return this.findById(userId, id)
+  }
+
+  /** Внешний запрос — до транзакции; импорт и связь — атомарно */
+  async addTitleByDiscoverKey(
+    userId: string,
+    id: string,
+    key: string
+  ): Promise<CollectionResponse> {
+    // Чужая коллекция не должна расходовать квоту внешнего API
+    await this._ensureIsOwner(userId, id)
+
+    const { source, type, externalId } = parseDiscoverKey(key)
+
+    const saveTitle = await this.integrationService.prepareImport(
+      source,
+      externalId,
+      type
+    )
+
+    await this.prisma.$transaction(async prisma => {
+      // Пока ждали внешний API, коллекцию могли удалить
+      await this._ensureIsOwner(userId, id, prisma)
+
+      const { id: titleId } = await saveTitle(prisma)
+
+      // connect не дублирует существующую связь
+      await prisma.collection.update({
+        where: { id, userId },
+        data: { titles: { connect: { id: titleId } } },
+        select: { id: true }
+      })
+    })
+
+    return this.findById(userId, id)
+  }
+
+  /** Удаление не импортирует тайтл и допускает отсутствие связи */
+  async removeTitleByDiscoverKey(
+    userId: string,
+    id: string,
+    key: string
+  ): Promise<void> {
+    await this._ensureIsOwner(userId, id)
+
+    const { source, type, externalId } = parseDiscoverKey(key)
+
+    const title = await this.integrationService.findImported(
+      source,
+      externalId,
+      type
+    )
+
+    if (!title) return
+
+    await this.prisma.collection.update({
+      where: { id, userId },
+      data: { titles: { disconnect: { id: title.id } } },
+      select: { id: true }
+    })
   }
 
   async delete(userId: string, id: string): Promise<boolean> {
@@ -279,6 +349,20 @@ export class CollectionService {
 
   // Приватные хелперы
 
+  /** Весь список проверяем до изменения связей, повторяющиеся id допустимы */
+  private async _ensureTitlesExist(
+    prisma: Prisma.TransactionClient,
+    titleIds: string[]
+  ): Promise<void> {
+    const count = await prisma.title.count({
+      where: { id: { in: titleIds } }
+    })
+
+    if (count !== new Set(titleIds).size) {
+      throw new NotFoundException('Title not found')
+    }
+  }
+
   /** На бесплатном тарифе число подборок ограничено */
   private async _ensureWithinPlanLimit(userId: string): Promise<void> {
     if (await this.subscriptionService.isProActive(userId)) return
@@ -292,8 +376,12 @@ export class CollectionService {
     }
   }
 
-  private async _ensureIsOwner(userId: string, id: string): Promise<void> {
-    const collection = await this.prisma.collection.findUnique({
+  private async _ensureIsOwner(
+    userId: string,
+    id: string,
+    prisma: Prisma.TransactionClient = this.prisma
+  ): Promise<void> {
+    const collection = await prisma.collection.findUnique({
       where: { id },
       select: { userId: true }
     })

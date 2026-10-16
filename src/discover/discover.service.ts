@@ -127,17 +127,25 @@ export class DiscoverService {
       type
     )
 
-    if (!title) return { libraryEntry: null, review: null }
+    if (!title) return { libraryEntry: null, review: null, collectionIds: [] }
 
-    const [libraryEntry, review] = await Promise.all([
+    const [libraryEntry, review, collections] = await Promise.all([
       this.prisma.libraryEntry.findUnique({
         where: { userId_titleId: { userId, titleId: title.id } },
         select: { id: true, status: true }
       }),
-      this.reviewService.findMineByTitle(userId, title.id)
+      this.reviewService.findMineByTitle(userId, title.id),
+      this.prisma.collection.findMany({
+        where: { userId, titles: { some: { id: title.id } } },
+        select: { id: true }
+      })
     ])
 
-    return { libraryEntry, review }
+    return {
+      libraryEntry,
+      review,
+      collectionIds: collections.map(({ id }) => id)
+    }
   }
 
   // Приватные хелперы

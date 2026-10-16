@@ -5,11 +5,22 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Query
+  Query,
+  UseGuards
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiOkResponse,
+  ApiTags,
+  ApiTooManyRequestsResponse
+} from '@nestjs/swagger'
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 
 import { Auth } from '../auth/decorators/auth.decorator'
+import { ErrorResponse } from '../common/response/error-response'
+import {
+  EXTERNAL_SEARCH_RATE_LIMIT,
+  EXTERNAL_SEARCH_RATE_TTL_MS
+} from '../constants/integration.constants'
 
 import { ExternalSearchDto } from './dto/external-search.dto'
 import { ImportTitleDto } from './dto/import-title.dto'
@@ -24,10 +35,17 @@ import {
 export class IntegrationController {
   constructor(private readonly integrationService: IntegrationService) {}
 
-  /** Поиск во внешних API — то, чего ещё нет в нашей базе */
+  /** Публичный поиск во внешних API с лимитом запросов на IP */
   @Get('search')
-  @Auth()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({
+    default: {
+      limit: EXTERNAL_SEARCH_RATE_LIMIT,
+      ttl: EXTERNAL_SEARCH_RATE_TTL_MS
+    }
+  })
   @ApiOkResponse({ type: [ExternalTitleResponse] })
+  @ApiTooManyRequestsResponse({ type: ErrorResponse })
   search(@Query() dto: ExternalSearchDto): Promise<ExternalTitleResponse[]> {
     return this.integrationService.search(dto.q, dto.type)
   }

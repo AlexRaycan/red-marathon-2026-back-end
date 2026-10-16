@@ -24,6 +24,8 @@ export class CreatorResponse extends PersonResponse {
 /** Карточка в списке — без тяжёлых полей */
 export class TitleListItemResponse {
   id: string
+  /** Ключ витрины; null только у тайтла без внешнего источника */
+  key: string | null
   type: TitleType
   name: string
   slug: string

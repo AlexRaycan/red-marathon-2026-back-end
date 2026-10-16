@@ -8,9 +8,15 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query
 } from '@nestjs/common'
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiTags
+} from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -105,6 +111,29 @@ export class CollectionController {
     @Body() dto: CollectionTitlesDto
   ): Promise<CollectionResponse> {
     return this.collectionService.removeTitles(userId, id, dto)
+  }
+
+  @Put(':id/titles/discover/:key')
+  @Auth()
+  @ApiOkResponse({ type: CollectionResponse })
+  addTitleByDiscoverKey(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Param('key') key: string
+  ): Promise<CollectionResponse> {
+    return this.collectionService.addTitleByDiscoverKey(userId, id, key)
+  }
+
+  @Delete(':id/titles/discover/:key')
+  @Auth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
+  removeTitleByDiscoverKey(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Param('key') key: string
+  ): Promise<void> {
+    return this.collectionService.removeTitleByDiscoverKey(userId, id, key)
   }
 
   /** Поделиться подборкой — получатели увидят уведомление */

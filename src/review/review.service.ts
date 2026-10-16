@@ -11,6 +11,10 @@ import {
   TSaveTitle
 } from '../integration/integration.service'
 import { PrismaService } from '../prisma/prisma.service'
+import {
+  TITLE_LIST_ITEM_SELECT,
+  toTitleListItemResponse
+} from '../title/title-list-item'
 import { TitleService } from '../title/title.service'
 import { parseDiscoverKey } from '../utils/discover-key'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
@@ -106,18 +110,7 @@ export class ReviewService {
         orderBy: this._getOrderBy(query.sort),
         select: {
           ...this.SELECT_REVIEW,
-          title: {
-            select: {
-              id: true,
-              type: true,
-              name: true,
-              slug: true,
-              coverUrl: true,
-              releaseDate: true,
-              rating: true,
-              ratingCount: true
-            }
-          }
+          title: { select: TITLE_LIST_ITEM_SELECT }
         }
       }),
       this.prisma.review.count({ where: { userId } })
@@ -126,7 +119,7 @@ export class ReviewService {
     return {
       items: items.map(({ title, ...item }) => ({
         ...this._toResponse(item),
-        title
+        title: toTitleListItemResponse(title)
       })),
       isHasMore: isHasMorePagination(total, query.skip, query.take),
       total

@@ -50,4 +50,6 @@ export class DiscoverMyStateResponse {
   libraryEntry: MyLibraryStatusResponse | null
   /** Включая приватный отзыв и оценку без текста */
   review: ReviewResponse | null
+  /** Только коллекции текущего пользователя, включая приватные */
+  collectionIds: string[]
 }
