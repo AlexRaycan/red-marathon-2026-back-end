@@ -7,16 +7,14 @@ import {
   HttpStatus,
   Param,
   Patch,
-  Post,
   Put,
   Query
 } from '@nestjs/common'
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 
-import { CreateLibraryEntryDto } from './dto/create-library-entry.dto'
 import { LibraryQueryDto } from './dto/library-query.dto'
 import { SetLibraryStatusDto } from './dto/set-library-status.dto'
 import { UpdateLibraryEntryDto } from './dto/update-library-entry.dto'
@@ -32,6 +30,7 @@ export class LibraryController {
   constructor(private readonly libraryService: LibraryService) {}
 
   @Get()
+  @ApiOperation({ operationId: 'libraryTitles' })
   @Auth()
   @ApiOkResponse({ type: LibraryListResponse })
   findAll(
@@ -41,28 +40,8 @@ export class LibraryController {
     return this.libraryService.findAll(userId, query)
   }
 
-  /** Есть ли тайтл в библиотеке — для кнопки на карточке и в расширении */
-  @Get('by-title/:titleId')
-  @Auth()
-  @ApiOkResponse({ type: LibraryEntryResponse })
-  findByTitle(
-    @CurrentUser('id') userId: string,
-    @Param('titleId') titleId: string
-  ): Promise<LibraryEntryResponse | null> {
-    return this.libraryService.findByTitle(userId, titleId)
-  }
-
-  @Post()
-  @Auth()
-  @ApiCreatedResponse({ type: LibraryEntryResponse })
-  create(
-    @CurrentUser('id') userId: string,
-    @Body() dto: CreateLibraryEntryDto
-  ): Promise<LibraryEntryResponse> {
-    return this.libraryService.create(userId, dto)
-  }
-
   @Patch(':id')
+  @ApiOperation({ operationId: 'updateLibraryTitle' })
   @Auth()
   @ApiOkResponse({ type: LibraryEntryResponse })
   update(
@@ -75,6 +54,7 @@ export class LibraryController {
 
   /** Статус по ключу витрины: `tmdb-movie-603`. Нет записи — создаст */
   @Put('discover/:key')
+  @ApiOperation({ operationId: 'setTitleStatus' })
   @Auth()
   @ApiOkResponse({ type: LibraryEntryResponse })
   setStatusByDiscoverKey(
@@ -85,17 +65,8 @@ export class LibraryController {
     return this.libraryService.setStatusByDiscoverKey(userId, key, dto)
   }
 
-  @Delete(':id')
-  @Auth()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  delete(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string
-  ): Promise<boolean> {
-    return this.libraryService.delete(userId, id)
-  }
-
   @Delete('discover/:key')
+  @ApiOperation({ operationId: 'removeFromLibrary' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteByDiscoverKey(

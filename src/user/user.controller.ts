@@ -8,7 +8,7 @@ import {
   Param,
   Patch
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -17,7 +17,6 @@ import { ChangePasswordDto } from './dto/change-password.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import {
   PublicProfileResponse,
-  RatingScaleRuleResponse,
   TasteStatsResponse,
   UserResponse
 } from './response/user-response'
@@ -29,6 +28,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
+  @ApiOperation({ operationId: 'currentUser' })
   @Auth()
   @ApiOkResponse({ type: UserResponse })
   findMe(@CurrentUser('id') userId: string): Promise<UserResponse> {
@@ -36,6 +36,7 @@ export class UserController {
   }
 
   @Patch('me')
+  @ApiOperation({ operationId: 'updateProfile' })
   @Auth()
   @ApiOkResponse({ type: UserResponse })
   updateProfile(
@@ -46,23 +47,15 @@ export class UserController {
   }
 
   @Get('me/taste')
+  @ApiOperation({ operationId: 'myTasteStats' })
   @Auth()
   @ApiOkResponse({ type: TasteStatsResponse })
   getMyTaste(@CurrentUser('id') userId: string): Promise<TasteStatsResponse> {
     return this.userService.getTasteStats(userId)
   }
 
-  /** Какую шкалу оценок показывать для каждого типа тайтла */
-  @Get('me/rating-scale')
-  @Auth()
-  @ApiOkResponse({ type: RatingScaleRuleResponse })
-  getRatingScale(
-    @CurrentUser('id') userId: string
-  ): Promise<RatingScaleRuleResponse> {
-    return this.userService.getRatingScaleRule(userId)
-  }
-
   @Patch('me/password')
+  @ApiOperation({ operationId: 'changePassword' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   changePassword(
@@ -73,6 +66,7 @@ export class UserController {
   }
 
   @Delete('me')
+  @ApiOperation({ operationId: 'deleteAccount' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteMe(@CurrentUser('id') userId: string): Promise<boolean> {
@@ -81,6 +75,7 @@ export class UserController {
 
   /** Публичный Taste DNA по ссылке — открывается без авторизации */
   @Get('public/:username')
+  @ApiOperation({ operationId: 'publicProfileByUsername' })
   @ApiOkResponse({ type: PublicProfileResponse })
   findPublic(
     @Param('username') username: string

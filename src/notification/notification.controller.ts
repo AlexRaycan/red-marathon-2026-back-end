@@ -10,7 +10,7 @@ import {
   Post,
   Query
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -34,6 +34,7 @@ export class NotificationController {
 
   /** Мобильное приложение присылает токен устройства после разрешения */
   @Post('push-token')
+  @ApiOperation({ operationId: 'registerPushToken' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   registerPushToken(
@@ -45,6 +46,7 @@ export class NotificationController {
 
   /** Юзер выключил уведомления или вышел из аккаунта */
   @Delete('push-token/:token')
+  @ApiOperation({ operationId: 'removePushToken' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   removePushToken(
@@ -55,6 +57,7 @@ export class NotificationController {
   }
 
   @Get()
+  @ApiOperation({ operationId: 'myNotifications' })
   @Auth()
   @ApiOkResponse({ type: NotificationListResponse })
   findAll(
@@ -65,6 +68,7 @@ export class NotificationController {
   }
 
   @Patch(':id/read')
+  @ApiOperation({ operationId: 'markNotificationRead' })
   @Auth()
   @ApiOkResponse({ type: NotificationResponse })
   markAsRead(
@@ -75,6 +79,7 @@ export class NotificationController {
   }
 
   @Patch('read-all')
+  @ApiOperation({ operationId: 'markAllNotificationsRead' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   markAllAsRead(@CurrentUser('id') userId: string): Promise<boolean> {
@@ -82,6 +87,7 @@ export class NotificationController {
   }
 
   @Delete(':id')
+  @ApiOperation({ operationId: 'deleteNotification' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(

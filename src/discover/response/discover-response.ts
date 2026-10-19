@@ -1,3 +1,5 @@
+import { ApiProperty } from '@nestjs/swagger'
+
 import {
   ExternalSource,
   LibraryStatus,
@@ -17,6 +19,7 @@ export class DiscoverItemResponse {
   externalSource: ExternalSource
   type: TitleType
   name: string
+  @ApiProperty({ type: String, nullable: true })
   coverUrl: string | null
   releaseDate: Date | null
   rating: number | null

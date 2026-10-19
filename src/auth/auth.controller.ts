@@ -8,7 +8,12 @@ import {
   Res,
   UnauthorizedException
 } from '@nestjs/common'
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags
+} from '@nestjs/swagger'
 import { Request, Response } from 'express'
 
 import {
@@ -35,6 +40,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({ operationId: 'register' })
   @ApiCreatedResponse({ type: AuthResponse })
   async register(
     @Body() dto: RegisterDto,
@@ -48,6 +54,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({ operationId: 'login' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AuthResponse })
   async login(
@@ -62,6 +69,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ operationId: 'refreshTokens' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AuthResponse })
   async refresh(
@@ -80,6 +88,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ operationId: 'logout' })
   @HttpCode(HttpStatus.OK)
   async logout(
     @Req() req: Request,
@@ -92,6 +101,7 @@ export class AuthController {
 
   /** Подтверждение кода из расширения — юзер уже авторизован в вебе */
   @Post('device/approve')
+  @ApiOperation({ operationId: 'approveDevice' })
   @HttpCode(HttpStatus.OK)
   @Auth()
   approveDevice(

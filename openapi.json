@@ -3,7 +3,7 @@
   "paths": {
     "/auth/register": {
       "post": {
-        "operationId": "auth_register",
+        "operationId": "register",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -27,6 +27,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth"
         ]
@@ -34,7 +35,7 @@
     },
     "/auth/login": {
       "post": {
-        "operationId": "auth_login",
+        "operationId": "login",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -58,6 +59,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth"
         ]
@@ -65,7 +67,7 @@
     },
     "/auth/refresh": {
       "post": {
-        "operationId": "auth_refresh",
+        "operationId": "refreshTokens",
         "parameters": [],
         "responses": {
           "200": {
@@ -79,6 +81,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth"
         ]
@@ -86,7 +89,7 @@
     },
     "/auth/logout": {
       "post": {
-        "operationId": "auth_logout",
+        "operationId": "logout",
         "parameters": [],
         "responses": {
           "200": {
@@ -100,6 +103,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth"
         ]
@@ -107,7 +111,7 @@
     },
     "/auth/device/approve": {
       "post": {
-        "operationId": "auth_approveDevice",
+        "operationId": "approveDevice",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -144,7 +148,7 @@
     },
     "/auth/mobile/register": {
       "post": {
-        "operationId": "authMobile_register",
+        "operationId": "mobileRegister",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -168,6 +172,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth-mobile"
         ]
@@ -175,7 +180,7 @@
     },
     "/auth/mobile/login": {
       "post": {
-        "operationId": "authMobile_login",
+        "operationId": "mobileLogin",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -199,6 +204,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth-mobile"
         ]
@@ -206,7 +212,7 @@
     },
     "/auth/mobile/refresh": {
       "post": {
-        "operationId": "authMobile_refresh",
+        "operationId": "mobileRefreshTokens",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -230,6 +236,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth-mobile"
         ]
@@ -237,7 +244,7 @@
     },
     "/auth/mobile/logout": {
       "post": {
-        "operationId": "authMobile_logout",
+        "operationId": "mobileLogout",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -261,6 +268,7 @@
             }
           }
         },
+        "summary": "",
         "tags": [
           "auth-mobile"
         ]
@@ -268,7 +276,7 @@
     },
     "/auth/mobile/device/code": {
       "post": {
-        "operationId": "authMobile_createDeviceCode",
+        "operationId": "createDeviceCode",
         "parameters": [],
         "responses": {
           "200": {
@@ -290,7 +298,7 @@
     },
     "/auth/mobile/device/poll": {
       "post": {
-        "operationId": "authMobile_pollDeviceCode",
+        "operationId": "pollDeviceCode",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -322,7 +330,7 @@
     },
     "/users/me": {
       "get": {
-        "operationId": "user_findMe",
+        "operationId": "currentUser",
         "parameters": [],
         "responses": {
           "200": {
@@ -341,12 +349,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "users"
         ]
       },
       "patch": {
-        "operationId": "user_updateProfile",
+        "operationId": "updateProfile",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -375,12 +384,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "users"
         ]
       },
       "delete": {
-        "operationId": "user_deleteMe",
+        "operationId": "deleteAccount",
         "parameters": [],
         "responses": {
           "204": {
@@ -399,6 +409,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "users"
         ]
@@ -406,7 +417,7 @@
     },
     "/users/me/taste": {
       "get": {
-        "operationId": "user_getMyTaste",
+        "operationId": "myTasteStats",
         "parameters": [],
         "responses": {
           "200": {
@@ -425,33 +436,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "users"
-        ]
-      }
-    },
-    "/users/me/rating-scale": {
-      "get": {
-        "operationId": "user_getRatingScale",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RatingScaleRuleResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Какую шкалу оценок показывать для каждого типа тайтла",
+        "summary": "",
         "tags": [
           "users"
         ]
@@ -459,7 +444,7 @@
     },
     "/users/me/password": {
       "patch": {
-        "operationId": "user_changePassword",
+        "operationId": "changePassword",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -488,6 +473,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "users"
         ]
@@ -495,7 +481,7 @@
     },
     "/users/public/{username}": {
       "get": {
-        "operationId": "user_findPublic",
+        "operationId": "publicProfileByUsername",
         "parameters": [
           {
             "name": "username",
@@ -524,108 +510,19 @@
         ]
       }
     },
-    "/titles": {
+    "/discover/trending": {
       "get": {
-        "operationId": "title_findAll",
+        "operationId": "trendingTitles",
         "parameters": [
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "description": "Несколько типов сразу: ?type=MOVIE&type=GAME",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "GAME",
-                  "MOVIE",
-                  "TV_SHOW",
-                  "BOOK",
-                  "ANIME"
-                ]
-              }
-            }
-          },
-          {
-            "name": "genres",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "name": "minRating",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "maximum": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "yearFrom",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "yearTo",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": "popular",
-              "type": "string",
-              "enum": [
-                "name",
-                "rating",
-                "newest",
-                "popular"
-              ]
-            }
-          },
-          {
-            "name": "skip",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "number"
-            }
-          },
           {
             "name": "take",
             "required": false,
             "in": "query",
             "schema": {
               "minimum": 1,
-              "maximum": 100,
+              "maximum": 50,
               "default": 20,
               "type": "number"
-            }
-          },
-          {
-            "name": "searchTerm",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -635,23 +532,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TitleListResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoverItemResponse"
+                  }
                 }
               }
             }
           }
         },
+        "summary": "Верхний блок главной: фильмы, сериалы, игры, аниме и книги вперемешку",
         "tags": [
-          "titles"
+          "discover"
         ]
       }
     },
-    "/titles/{slug}": {
+    "/discover/{key}": {
       "get": {
-        "operationId": "title_findBySlug",
+        "operationId": "title",
         "parameters": [
           {
-            "name": "slug",
+            "name": "key",
             "required": true,
             "in": "path",
             "schema": {
@@ -665,73 +566,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TitleResponse"
+                  "$ref": "#/components/schemas/DiscoverDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           }
         },
+        "summary": "Детальная страница по ключу из карточки: `tmdb-movie-603`",
         "tags": [
-          "titles"
+          "discover"
         ]
       }
     },
-    "/search": {
+    "/discover/{key}/me": {
       "get": {
-        "operationId": "search_search",
+        "operationId": "userTitle",
         "parameters": [
           {
-            "name": "q",
+            "name": "key",
             "required": true,
-            "in": "query",
-            "schema": {
-              "minLength": 2,
-              "type": "string"
-            }
-          },
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "GAME",
-                  "MOVIE",
-                  "TV_SHOW",
-                  "BOOK",
-                  "ANIME"
-                ]
-              }
-            }
-          },
-          {
-            "name": "skip",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "number"
-            }
-          },
-          {
-            "name": "take",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "searchTerm",
-            "required": false,
-            "in": "query",
+            "in": "path",
             "schema": {
               "type": "string"
             }
@@ -743,54 +607,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TitleListResponse"
+                  "$ref": "#/components/schemas/DiscoverMyStateResponse"
                 }
               }
             }
           }
         },
-        "tags": [
-          "search"
-        ]
-      }
-    },
-    "/search/suggest": {
-      "get": {
-        "operationId": "search_suggest",
-        "parameters": [
+        "security": [
           {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
+            "bearer": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TitleListItemResponse"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Подсказки для поисковой строки и браузерного расширения",
+        "summary": "Статус в библиотеке, свой отзыв и коллекции для детальной страницы",
         "tags": [
-          "search"
+          "discover"
         ]
       }
     },
     "/external/search": {
       "get": {
-        "operationId": "integration_search",
+        "operationId": "searchTitles",
         "parameters": [
           {
             "name": "q",
@@ -851,234 +687,9 @@
         ]
       }
     },
-    "/external/import": {
-      "post": {
-        "operationId": "integration_import",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ImportTitleDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImportedTitleResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Сохранить внешний тайтл к нам",
-        "tags": [
-          "external"
-        ]
-      }
-    },
-    "/discover/trending": {
-      "get": {
-        "operationId": "discover_getTrending",
-        "parameters": [
-          {
-            "name": "take",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 50,
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DiscoverItemResponse"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Верхний блок главной: фильмы, сериалы, игры, аниме и книги вперемешку",
-        "tags": [
-          "discover"
-        ]
-      }
-    },
-    "/discover/{key}": {
-      "get": {
-        "operationId": "discover_findByKey",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscoverDetailsResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Детальная страница по ключу из карточки: `tmdb-movie-603`",
-        "tags": [
-          "discover"
-        ]
-      }
-    },
-    "/discover/{key}/me": {
-      "get": {
-        "operationId": "discover_findMyState",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscoverMyStateResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Статус в библиотеке, свой отзыв и коллекции для детальной страницы",
-        "tags": [
-          "discover"
-        ]
-      }
-    },
-    "/reviews/title/{slug}": {
-      "get": {
-        "operationId": "review_findByTitle",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": "newest",
-              "type": "string",
-              "enum": [
-                "rating",
-                "newest",
-                "ratingAsc"
-              ]
-            }
-          },
-          {
-            "name": "skip",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "number"
-            }
-          },
-          {
-            "name": "take",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "searchTerm",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewListResponse"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Отзывы на тайтле — открыты без авторизации",
-        "tags": [
-          "reviews"
-        ]
-      }
-    },
     "/reviews/discover/{key}": {
       "get": {
-        "operationId": "review_findByDiscoverKey",
+        "operationId": "titleReviews",
         "parameters": [
           {
             "name": "key",
@@ -1150,7 +761,7 @@
         ]
       },
       "post": {
-        "operationId": "review_createByDiscoverKey",
+        "operationId": "createReview",
         "parameters": [
           {
             "name": "key",
@@ -1196,7 +807,7 @@
     },
     "/reviews/my": {
       "get": {
-        "operationId": "review_findMy",
+        "operationId": "myReviews",
         "parameters": [
           {
             "name": "sort",
@@ -1259,42 +870,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "reviews"
-        ]
-      }
-    },
-    "/reviews": {
-      "post": {
-        "operationId": "review_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReviewDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
+        "summary": "",
         "tags": [
           "reviews"
         ]
@@ -1302,7 +878,7 @@
     },
     "/reviews/{id}": {
       "patch": {
-        "operationId": "review_update",
+        "operationId": "updateReview",
         "parameters": [
           {
             "name": "id",
@@ -1340,12 +916,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "reviews"
         ]
       },
       "delete": {
-        "operationId": "review_delete",
+        "operationId": "deleteReview",
         "parameters": [
           {
             "name": "id",
@@ -1373,6 +950,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "reviews"
         ]
@@ -1380,7 +958,7 @@
     },
     "/library": {
       "get": {
-        "operationId": "library_findAll",
+        "operationId": "libraryTitles",
         "parameters": [
           {
             "name": "status",
@@ -1486,76 +1064,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "library"
-        ]
-      },
-      "post": {
-        "operationId": "library_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateLibraryEntryDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LibraryEntryResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "library"
-        ]
-      }
-    },
-    "/library/by-title/{titleId}": {
-      "get": {
-        "operationId": "library_findByTitle",
-        "parameters": [
-          {
-            "name": "titleId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LibraryEntryResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Есть ли тайтл в библиотеке — для кнопки на карточке и в расширении",
+        "summary": "",
         "tags": [
           "library"
         ]
@@ -1563,7 +1072,7 @@
     },
     "/library/{id}": {
       "patch": {
-        "operationId": "library_update",
+        "operationId": "updateLibraryTitle",
         "parameters": [
           {
             "name": "id",
@@ -1601,39 +1110,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "library"
-        ]
-      },
-      "delete": {
-        "operationId": "library_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
+        "summary": "",
         "tags": [
           "library"
         ]
@@ -1641,7 +1118,7 @@
     },
     "/library/discover/{key}": {
       "put": {
-        "operationId": "library_setStatusByDiscoverKey",
+        "operationId": "setTitleStatus",
         "parameters": [
           {
             "name": "key",
@@ -1685,7 +1162,7 @@
         ]
       },
       "delete": {
-        "operationId": "library_deleteByDiscoverKey",
+        "operationId": "removeFromLibrary",
         "parameters": [
           {
             "name": "key",
@@ -1713,6 +1190,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "library"
         ]
@@ -1720,7 +1198,7 @@
     },
     "/subscription": {
       "get": {
-        "operationId": "subscription_findMy",
+        "operationId": "mySubscription",
         "parameters": [],
         "responses": {
           "200": {
@@ -1747,7 +1225,7 @@
     },
     "/subscription/verify": {
       "post": {
-        "operationId": "subscription_verifyPurchase",
+        "operationId": "verifyPurchase",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1784,7 +1262,7 @@
     },
     "/subscription/trial": {
       "post": {
-        "operationId": "subscription_startTrial",
+        "operationId": "startTrial",
         "parameters": [],
         "responses": {
           "200": {
@@ -1803,6 +1281,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "subscription"
         ]
@@ -1810,7 +1289,7 @@
     },
     "/subscription/cancel": {
       "post": {
-        "operationId": "subscription_cancel",
+        "operationId": "cancelSubscription",
         "parameters": [],
         "responses": {
           "200": {
@@ -1829,6 +1308,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "subscription"
         ]
@@ -1836,7 +1316,7 @@
     },
     "/collections": {
       "get": {
-        "operationId": "collection_findAll",
+        "operationId": "myCollections",
         "parameters": [
           {
             "name": "skip",
@@ -1885,12 +1365,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "collections"
         ]
       },
       "post": {
-        "operationId": "collection_create",
+        "operationId": "createCollection",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1919,6 +1400,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "collections"
         ]
@@ -1926,7 +1408,7 @@
     },
     "/collections/public/{username}/{slug}": {
       "get": {
-        "operationId": "collection_findPublic",
+        "operationId": "publicCollection",
         "parameters": [
           {
             "name": "username",
@@ -1965,7 +1447,7 @@
     },
     "/collections/{id}": {
       "get": {
-        "operationId": "collection_findById",
+        "operationId": "collectionById",
         "parameters": [
           {
             "name": "id",
@@ -1993,12 +1475,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "collections"
         ]
       },
       "patch": {
-        "operationId": "collection_update",
+        "operationId": "updateCollection",
         "parameters": [
           {
             "name": "id",
@@ -2036,12 +1519,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "collections"
         ]
       },
       "delete": {
-        "operationId": "collection_delete",
+        "operationId": "deleteCollection",
         "parameters": [
           {
             "name": "id",
@@ -2069,94 +1553,7 @@
             "bearer": []
           }
         ],
-        "tags": [
-          "collections"
-        ]
-      }
-    },
-    "/collections/{id}/titles": {
-      "post": {
-        "operationId": "collection_addTitles",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CollectionTitlesDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollectionResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "collections"
-        ]
-      },
-      "delete": {
-        "operationId": "collection_removeTitles",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CollectionTitlesDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollectionResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
+        "summary": "",
         "tags": [
           "collections"
         ]
@@ -2164,7 +1561,7 @@
     },
     "/collections/{id}/titles/discover/{key}": {
       "put": {
-        "operationId": "collection_addTitleByDiscoverKey",
+        "operationId": "addToCollection",
         "parameters": [
           {
             "name": "id",
@@ -2200,12 +1597,13 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "collections"
         ]
       },
       "delete": {
-        "operationId": "collection_removeTitleByDiscoverKey",
+        "operationId": "removeFromCollection",
         "parameters": [
           {
             "name": "id",
@@ -2234,6 +1632,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "collections"
         ]
@@ -2241,7 +1640,7 @@
     },
     "/collections/{id}/share": {
       "post": {
-        "operationId": "collection_share",
+        "operationId": "shareCollection",
         "parameters": [
           {
             "name": "id",
@@ -2287,7 +1686,7 @@
     },
     "/notifications/push-token": {
       "post": {
-        "operationId": "notification_registerPushToken",
+        "operationId": "registerPushToken",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2324,7 +1723,7 @@
     },
     "/notifications/push-token/{token}": {
       "delete": {
-        "operationId": "notification_removePushToken",
+        "operationId": "removePushToken",
         "parameters": [
           {
             "name": "token",
@@ -2360,7 +1759,7 @@
     },
     "/notifications": {
       "get": {
-        "operationId": "notification_findAll",
+        "operationId": "myNotifications",
         "parameters": [
           {
             "name": "skip",
@@ -2418,6 +1817,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "notifications"
         ]
@@ -2425,7 +1825,7 @@
     },
     "/notifications/{id}/read": {
       "patch": {
-        "operationId": "notification_markAsRead",
+        "operationId": "markNotificationRead",
         "parameters": [
           {
             "name": "id",
@@ -2453,6 +1853,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "notifications"
         ]
@@ -2460,7 +1861,7 @@
     },
     "/notifications/read-all": {
       "patch": {
-        "operationId": "notification_markAllAsRead",
+        "operationId": "markAllNotificationsRead",
         "parameters": [],
         "responses": {
           "200": {
@@ -2479,6 +1880,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "notifications"
         ]
@@ -2486,7 +1888,7 @@
     },
     "/notifications/{id}": {
       "delete": {
-        "operationId": "notification_delete",
+        "operationId": "deleteNotification",
         "parameters": [
           {
             "name": "id",
@@ -2514,6 +1916,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "notifications"
         ]
@@ -2521,7 +1924,7 @@
     },
     "/friends": {
       "get": {
-        "operationId": "friendship_findAll",
+        "operationId": "myFriends",
         "parameters": [],
         "responses": {
           "200": {
@@ -2540,6 +1943,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "friends"
         ]
@@ -2547,7 +1951,7 @@
     },
     "/friends/requests": {
       "get": {
-        "operationId": "friendship_findRequests",
+        "operationId": "myFriendRequests",
         "parameters": [],
         "responses": {
           "200": {
@@ -2572,7 +1976,7 @@
         ]
       },
       "post": {
-        "operationId": "friendship_request",
+        "operationId": "sendFriendRequest",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2601,6 +2005,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "friends"
         ]
@@ -2608,7 +2013,7 @@
     },
     "/friends/requests/{id}/accept": {
       "post": {
-        "operationId": "friendship_accept",
+        "operationId": "acceptFriendRequest",
         "parameters": [
           {
             "name": "id",
@@ -2636,6 +2041,7 @@
             "bearer": []
           }
         ],
+        "summary": "",
         "tags": [
           "friends"
         ]
@@ -2643,7 +2049,7 @@
     },
     "/friends/{id}": {
       "delete": {
-        "operationId": "friendship_remove",
+        "operationId": "removeFriend",
         "parameters": [
           {
             "name": "id",
@@ -2679,7 +2085,7 @@
     },
     "/ai/recommendations": {
       "get": {
-        "operationId": "ai_getRecommendations",
+        "operationId": "aiRecommendations",
         "parameters": [],
         "responses": {
           "200": {
@@ -2706,7 +2112,7 @@
     },
     "/ai/picker": {
       "post": {
-        "operationId": "ai_pick",
+        "operationId": "aiPickTitle",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2741,12 +2147,12 @@
         ]
       }
     },
-    "/ai/summary/{slug}": {
+    "/ai/summary/{key}": {
       "get": {
-        "operationId": "ai_getSummary",
+        "operationId": "aiTitleSummary",
         "parameters": [
           {
-            "name": "slug",
+            "name": "key",
             "required": true,
             "in": "path",
             "schema": {
@@ -2771,7 +2177,7 @@
             "bearer": []
           }
         ],
-        "summary": "Описание без спойлеров для детальной страницы",
+        "summary": "Описание без спойлеров для детальной страницы по ключу: `tmdb-movie-603`",
         "tags": [
           "ai"
         ]
@@ -2987,15 +2393,6 @@
           },
           "isPublic": {
             "type": "boolean"
-          },
-          "ratingScale": {
-            "type": "string",
-            "description": "Как показывать оценки. Хранятся всегда по 10-балльной шкале.\nAUTO — шкала выбирается по типу тайтла, см. /users/me/rating-scales",
-            "enum": [
-              "AUTO",
-              "FIVE",
-              "TEN"
-            ]
           }
         },
         "required": [
@@ -3004,8 +2401,7 @@
           "avatarUrl",
           "country",
           "birthDate",
-          "isPublic",
-          "ratingScale"
+          "isPublic"
         ]
       },
       "UserResponse": {
@@ -3087,15 +2483,6 @@
           "isPublic": {
             "type": "boolean",
             "description": "Открыт ли Taste DNA по публичной ссылке"
-          },
-          "ratingScale": {
-            "type": "string",
-            "description": "Предпочтительная шкала отображения. На бэкенде оценки всегда\nдесятибалльные — фронт делит на 2, когда выбрана пятибалльная",
-            "enum": [
-              "AUTO",
-              "FIVE",
-              "TEN"
-            ]
           }
         }
       },
@@ -3140,29 +2527,6 @@
           "completedCount",
           "averageRating",
           "favoriteGenres"
-        ]
-      },
-      "RatingScaleRuleResponse": {
-        "type": "object",
-        "properties": {
-          "scale": {
-            "type": "string",
-            "description": "Что выбрал пользователь",
-            "enum": [
-              "AUTO",
-              "FIVE",
-              "TEN"
-            ]
-          },
-          "byType": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Какую шкалу показывать для каждого типа при текущей настройке"
-          }
-        },
-        "required": [
-          "scale",
-          "byType"
         ]
       },
       "ChangePasswordDto": {
@@ -3224,36 +2588,41 @@
           "taste"
         ]
       },
-      "TitleListItemResponse": {
+      "DiscoverItemResponse": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
           },
           "key": {
             "type": "string",
-            "nullable": true,
-            "description": "Ключ витрины; null только у тайтла без внешнего источника"
+            "description": "Ключ для детальной страницы: `tmdb-movie-603`, `rawg-game-3328`"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "externalSource": {
+            "type": "string",
+            "enum": [
+              "TMDB",
+              "RAWG",
+              "GOOGLE_BOOKS",
+              "SHIKIMORI"
+            ]
           },
           "type": {
+            "type": "string",
             "enum": [
               "GAME",
               "MOVIE",
               "TV_SHOW",
               "BOOK",
               "ANIME"
-            ],
-            "type": "string"
+            ]
           },
           "name": {
             "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "coverUrl": {
-            "type": "string",
-            "nullable": true
           },
           "releaseDate": {
             "format": "date-time",
@@ -3261,59 +2630,26 @@
             "nullable": true
           },
           "rating": {
-            "type": "number"
+            "type": "number",
+            "nullable": true
           },
-          "ratingCount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "key",
-          "type",
-          "name",
-          "slug",
-          "coverUrl",
-          "releaseDate",
-          "rating",
-          "ratingCount"
-        ]
-      },
-      "TitleListResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
+          "genres": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TitleListItemResponse"
+              "type": "string"
             }
-          },
-          "isHasMore": {
-            "type": "boolean"
           }
         },
         "required": [
-          "items",
-          "isHasMore"
-        ]
-      },
-      "GenreResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
+          "coverUrl",
+          "key",
+          "externalId",
+          "externalSource",
+          "type",
           "name",
-          "slug"
+          "releaseDate",
+          "rating",
+          "genres"
         ]
       },
       "PersonResponse": {
@@ -3365,337 +2701,13 @@
           "photoUrl"
         ]
       },
-      "TitleResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "key": {
-            "type": "string",
-            "nullable": true,
-            "description": "Ключ витрины; null только у тайтла без внешнего источника"
-          },
-          "type": {
-            "enum": [
-              "GAME",
-              "MOVIE",
-              "TV_SHOW",
-              "BOOK",
-              "ANIME"
-            ],
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "coverUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "releaseDate": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "rating": {
-            "type": "number"
-          },
-          "ratingCount": {
-            "type": "number"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "ARCHIVED"
-            ]
-          },
-          "originalName": {
-            "type": "string",
-            "nullable": true
-          },
-          "genres": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GenreResponse"
-            }
-          },
-          "similar": {
-            "description": "Похожие тайтлы — приходят вместе со страницей, отдельный запрос не нужен",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TitleListItemResponse"
-            }
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true,
-            "description": "Ниже — из внешнего API, в нашей базе не хранится"
-          },
-          "ageRating": {
-            "type": "string",
-            "nullable": true,
-            "description": "PG-13, TV-MA, M, R-17+ — у каждого источника своя система"
-          },
-          "cast": {
-            "description": "Актёры — только у фильмов и сериалов, у остальных пустой список",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PersonResponse"
-            }
-          },
-          "creators": {
-            "description": "Режиссёр, автор идеи сериала, студия игры или аниме, автор книги",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreatorResponse"
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Страницы книги, платформы игры, число серий"
-          }
-        },
-        "required": [
-          "id",
-          "key",
-          "type",
-          "name",
-          "slug",
-          "coverUrl",
-          "releaseDate",
-          "rating",
-          "ratingCount",
-          "status",
-          "originalName",
-          "genres",
-          "similar",
-          "createdAt",
-          "description",
-          "ageRating",
-          "cast",
-          "creators",
-          "metadata"
-        ]
-      },
-      "ExternalTitleResponse": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "externalSource": {
-            "type": "string",
-            "enum": [
-              "TMDB",
-              "RAWG",
-              "GOOGLE_BOOKS",
-              "SHIKIMORI"
-            ]
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "GAME",
-              "MOVIE",
-              "TV_SHOW",
-              "BOOK",
-              "ANIME"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "originalName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "coverUrl": {
-            "type": "string"
-          },
-          "releaseDate": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "rating": {
-            "type": "number"
-          },
-          "ratingCount": {
-            "type": "number"
-          },
-          "genres": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "key",
-          "externalId",
-          "externalSource",
-          "type",
-          "name",
-          "genres"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number"
-          },
-          "message": {
-            "type": "object"
-          },
-          "error": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "statusCode",
-          "message",
-          "error",
-          "path",
-          "timestamp"
-        ]
-      },
-      "ImportTitleDto": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "type": "string",
-            "enum": [
-              "TMDB",
-              "RAWG",
-              "GOOGLE_BOOKS",
-              "SHIKIMORI"
-            ]
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "description": "Часть ключа тайтла: у TMDB фильм и сериал с одним id — разные тайтлы",
-            "enum": [
-              "GAME",
-              "MOVIE",
-              "TV_SHOW",
-              "BOOK",
-              "ANIME"
-            ]
-          }
-        },
-        "required": [
-          "source",
-          "externalId",
-          "type"
-        ]
-      },
-      "ImportedTitleResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "slug"
-        ]
-      },
-      "DiscoverItemResponse": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "description": "Ключ для детальной страницы: `tmdb-movie-603`, `rawg-game-3328`"
-          },
-          "externalId": {
-            "type": "string"
-          },
-          "externalSource": {
-            "type": "string",
-            "enum": [
-              "TMDB",
-              "RAWG",
-              "GOOGLE_BOOKS",
-              "SHIKIMORI"
-            ]
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "GAME",
-              "MOVIE",
-              "TV_SHOW",
-              "BOOK",
-              "ANIME"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "coverUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "releaseDate": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "rating": {
-            "type": "number",
-            "nullable": true
-          },
-          "genres": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "key",
-          "externalId",
-          "externalSource",
-          "type",
-          "name",
-          "coverUrl",
-          "releaseDate",
-          "rating",
-          "genres"
-        ]
-      },
       "DiscoverDetailsResponse": {
         "type": "object",
         "properties": {
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "key": {
             "type": "string",
             "description": "Ключ для детальной страницы: `tmdb-movie-603`, `rawg-game-3328`"
@@ -3724,10 +2736,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "coverUrl": {
-            "type": "string",
-            "nullable": true
           },
           "releaseDate": {
             "format": "date-time",
@@ -3789,12 +2797,12 @@
           }
         },
         "required": [
+          "coverUrl",
           "key",
           "externalId",
           "externalSource",
           "type",
           "name",
-          "coverUrl",
           "releaseDate",
           "rating",
           "genres",
@@ -3806,6 +2814,33 @@
           "creators",
           "metadata",
           "similar"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number"
+          },
+          "message": {
+            "type": "object"
+          },
+          "error": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "error",
+          "path",
+          "timestamp"
         ]
       },
       "MyLibraryStatusResponse": {
@@ -3925,6 +2960,84 @@
           "collectionIds"
         ]
       },
+      "ExternalTitleResponse": {
+        "type": "object",
+        "properties": {
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "key": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "externalSource": {
+            "type": "string",
+            "enum": [
+              "TMDB",
+              "RAWG",
+              "GOOGLE_BOOKS",
+              "SHIKIMORI"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "GAME",
+              "MOVIE",
+              "TV_SHOW",
+              "BOOK",
+              "ANIME"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "originalName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true
+          },
+          "ratingCount": {
+            "type": "number",
+            "nullable": true
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "coverUrl",
+          "key",
+          "externalId",
+          "externalSource",
+          "type",
+          "name",
+          "originalName",
+          "description",
+          "releaseDate",
+          "rating",
+          "ratingCount",
+          "genres"
+        ]
+      },
       "ReviewListResponse": {
         "type": "object",
         "properties": {
@@ -3946,6 +3059,61 @@
           "items",
           "isHasMore",
           "total"
+        ]
+      },
+      "TitleListItemResponse": {
+        "type": "object",
+        "properties": {
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ключ витрины; null только у тайтла без внешнего источника"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "GAME",
+              "MOVIE",
+              "TV_SHOW",
+              "BOOK",
+              "ANIME"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "releaseDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number"
+          },
+          "ratingCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "coverUrl",
+          "id",
+          "key",
+          "type",
+          "name",
+          "slug",
+          "releaseDate",
+          "rating",
+          "ratingCount"
         ]
       },
       "MyReviewResponse": {
@@ -4010,33 +3178,6 @@
           "items",
           "isHasMore",
           "total"
-        ]
-      },
-      "CreateReviewDto": {
-        "type": "object",
-        "properties": {
-          "titleId": {
-            "type": "string"
-          },
-          "rating": {
-            "type": "number",
-            "description": "Оценки везде десятибалльные, клиент показывает их по своей шкале",
-            "minimum": 1,
-            "maximum": 10
-          },
-          "text": {
-            "type": "string",
-            "description": "null очищает текст — отзыв становится просто оценкой",
-            "minLength": 10,
-            "maxLength": 5000
-          },
-          "isPublic": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "titleId",
-          "rating"
         ]
       },
       "ReviewFieldsDto": {
@@ -4183,55 +3324,6 @@
           "items",
           "total",
           "isHasMore"
-        ]
-      },
-      "CreateLibraryEntryDto": {
-        "type": "object",
-        "properties": {
-          "titleId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PLANNED",
-              "IN_PROGRESS",
-              "COMPLETED",
-              "ON_HOLD",
-              "DROPPED"
-            ]
-          },
-          "progress": {
-            "type": "number",
-            "minimum": 0
-          },
-          "progressUnit": {
-            "type": "string",
-            "enum": [
-              "EPISODE",
-              "CHAPTER",
-              "PAGE",
-              "HOUR",
-              "PERCENT"
-            ]
-          },
-          "note": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "isFavorite": {
-            "type": "boolean"
-          },
-          "startedAt": {
-            "type": "string",
-            "description": "Если не прислать — проставится автоматически по статусу"
-          },
-          "finishedAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "titleId"
         ]
       },
       "UpdateLibraryEntryDto": {
@@ -4640,22 +3732,6 @@
             "type": "boolean"
           }
         }
-      },
-      "CollectionTitlesDto": {
-        "type": "object",
-        "properties": {
-          "titleIds": {
-            "minItems": 1,
-            "maxItems": 50,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "titleIds"
-        ]
       },
       "ShareCollectionDto": {
         "type": "object",

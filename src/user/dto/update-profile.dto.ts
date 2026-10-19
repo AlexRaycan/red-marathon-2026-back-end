@@ -1,15 +1,12 @@
 import {
   IsBoolean,
   IsDateString,
-  IsEnum,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
   MinLength
 } from 'class-validator'
-
-import { RatingScale } from '../../generated/prisma/enums'
 
 export class UpdateProfileDto {
   /** При регистрации выдаётся случайный — здесь юзер меняет его на свой */
@@ -50,12 +47,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   readonly isPublic?: boolean
-
-  /**
-   * Предпочтительная шкала отображения. На бэкенде оценки всегда
-   * десятибалльные — фронт делит на 2, когда выбрана пятибалльная
-   */
-  @IsOptional()
-  @IsEnum(RatingScale, { message: 'Unknown rating scale' })
-  readonly ratingScale?: RatingScale
 }

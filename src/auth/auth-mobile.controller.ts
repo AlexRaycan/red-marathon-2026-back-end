@@ -1,5 +1,10 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags
+} from '@nestjs/swagger'
 
 import { AuthService } from './auth.service'
 import { DeviceCodeDto } from './dto/device-code.dto'
@@ -23,12 +28,14 @@ export class AuthMobileController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({ operationId: 'mobileRegister' })
   @ApiCreatedResponse({ type: MobileAuthResponse })
   register(@Body() dto: RegisterDto): Promise<MobileAuthResponse> {
     return this.authService.register(dto)
   }
 
   @Post('login')
+  @ApiOperation({ operationId: 'mobileLogin' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: MobileAuthResponse })
   login(@Body() dto: LoginDto): Promise<MobileAuthResponse> {
@@ -36,6 +43,7 @@ export class AuthMobileController {
   }
 
   @Post('refresh')
+  @ApiOperation({ operationId: 'mobileRefreshTokens' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: MobileAuthResponse })
   refresh(@Body() dto: RefreshDto): Promise<MobileAuthResponse> {
@@ -43,6 +51,7 @@ export class AuthMobileController {
   }
 
   @Post('logout')
+  @ApiOperation({ operationId: 'mobileLogout' })
   @HttpCode(HttpStatus.OK)
   logout(@Body() dto: RefreshDto): Promise<boolean> {
     return this.authService.logout(dto.refreshToken)
@@ -50,6 +59,7 @@ export class AuthMobileController {
 
   /** Расширение просит код и показывает его пользователю */
   @Post('device/code')
+  @ApiOperation({ operationId: 'createDeviceCode' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: DeviceCodeResponse })
   createDeviceCode(): Promise<DeviceCodeResponse> {
@@ -58,6 +68,7 @@ export class AuthMobileController {
 
   /** Расширение опрашивает эндпоинт, пока юзер не подтвердит код */
   @Post('device/poll')
+  @ApiOperation({ operationId: 'pollDeviceCode' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: DevicePollResponse })
   pollDeviceCode(@Body() dto: DeviceCodeDto): Promise<DevicePollResponse> {

@@ -2,10 +2,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { Cache } from 'cache-manager'
 
-import {
-  EXTERNAL_CACHE_TTL_MS,
-  TITLE_DETAILS_CACHE_TTL_MS
-} from '../constants/integration.constants'
+import { EXTERNAL_CACHE_TTL_MS } from '../constants/integration.constants'
 
 import { Prisma } from '../generated/prisma/client'
 import { ExternalSource, TitleType } from '../generated/prisma/enums'
@@ -15,7 +12,6 @@ import { generateSlug } from '../utils/generate-slug'
 
 import {
   IExternalTitle,
-  ITitleDetails,
   ITitleProvider
 } from './interfaces/title-provider.interface'
 import { GoogleBooksProvider } from './providers/google-books.provider'
@@ -78,6 +74,12 @@ export class IntegrationService {
       .sort((a, b) => (b.ratingCount ?? 0) - (a.ratingCount ?? 0))
       .map(item => ({
         ...item,
+        originalName: item.originalName ?? null,
+        description: item.description ?? null,
+        coverUrl: item.coverUrl ?? null,
+        releaseDate: item.releaseDate ?? null,
+        rating: item.rating ?? null,
+        ratingCount: item.ratingCount ?? null,
         key: toDiscoverKey({
           source: item.externalSource,
           type: item.type,
@@ -92,20 +94,6 @@ export class IntegrationService {
     }
 
     return items
-  }
-
-  /**
-   * Сохраняет внешний тайтл к нам. Если он уже импортирован —
-   * возвращает существующий, а не плодит дубль.
-   */
-  async importTitle(
-    source: ExternalSource,
-    externalId: string,
-    type: TitleType
-  ): Promise<ImportedTitleResponse> {
-    const saveTitle = await this.prepareImport(source, externalId, type)
-
-    return saveTitle(this.prisma)
   }
 
   /**
@@ -155,48 +143,6 @@ export class IntegrationService {
       },
       select: { id: true, slug: true }
     })
-  }
-
-  /**
-   * Описание, актёры и специфика типа для детальной страницы.
-   * В базе их не держим: они нужны только здесь и быстро устаревают.
-   * Если внешний API недоступен — возвращаем null, страница не ломается
-   */
-  async getTitleDetails(
-    source: ExternalSource,
-    externalId: string,
-    type: TitleType
-  ): Promise<ITitleDetails | null> {
-    const cacheKey = `details:${source}:${type}:${externalId}`
-
-    const cached = await this.cache.get<ITitleDetails>(cacheKey)
-
-    if (cached) return cached
-
-    const provider = this.providers.find(({ source: s }) => s === source)
-
-    if (!provider) return null
-
-    try {
-      const external = await provider.findByExternalId(externalId, type)
-
-      if (!external) return null
-
-      const details: ITitleDetails = {
-        description: external.description,
-        ageRating: external.ageRating,
-        cast: external.cast ?? [],
-        creators: external.creators ?? [],
-        metadata: external.metadata ?? {}
-      }
-
-      await this.cache.set(cacheKey, details, TITLE_DETAILS_CACHE_TTL_MS)
-
-      return details
-    } catch {
-      // Недоступный источник не должен ронять страницу тайтла
-      return null
-    }
   }
 
   // Приватные хелперы

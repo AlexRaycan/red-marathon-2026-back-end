@@ -9,20 +9,7 @@ export const MAX_TAKE = 100
 // Код ошибки Prisma при нарушении уникального индекса
 export const PRISMA_UNIQUE_VIOLATION = 'P2002'
 
-export const SEARCH_SUGGEST_TAKE = 8
 export const SIMILAR_TAKE = 10
-
-/**
- * Шкала для типа тайтла, когда у юзера выбран AUTO. Книги и игры привычнее
- * в пяти звёздах, кино и аниме — в десяти. Храним всегда по десятибалльной
- */
-export const DEFAULT_RATING_SCALE_BY_TYPE = {
-  MOVIE: 'TEN',
-  TV_SHOW: 'TEN',
-  ANIME: 'TEN',
-  BOOK: 'FIVE',
-  GAME: 'FIVE'
-} as const
 
 /** PRO снимает эти ограничения */
 export const FREE_PLAN_LIMITS = {

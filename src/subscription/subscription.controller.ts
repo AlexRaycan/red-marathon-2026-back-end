@@ -6,7 +6,7 @@ import {
   HttpStatus,
   Post
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -22,6 +22,7 @@ export class SubscriptionController {
 
   /** Тариф, лимиты и текущее потребление */
   @Get()
+  @ApiOperation({ operationId: 'mySubscription' })
   @Auth()
   @ApiOkResponse({ type: SubscriptionResponse })
   findMy(@CurrentUser('id') userId: string): Promise<SubscriptionResponse> {
@@ -33,6 +34,7 @@ export class SubscriptionController {
    * Веб и расширение сюда не ходят: оплата только в сторах
    */
   @Post('verify')
+  @ApiOperation({ operationId: 'verifyPurchase' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: SubscriptionResponse })
@@ -44,6 +46,7 @@ export class SubscriptionController {
   }
 
   @Post('trial')
+  @ApiOperation({ operationId: 'startTrial' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: SubscriptionResponse })
@@ -52,6 +55,7 @@ export class SubscriptionController {
   }
 
   @Post('cancel')
+  @ApiOperation({ operationId: 'cancelSubscription' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: SubscriptionResponse })

@@ -1,4 +1,4 @@
-import { RatingScale, UserRole } from '../../generated/prisma/enums'
+import { UserRole } from '../../generated/prisma/enums'
 
 export class ProfileResponse {
   displayName: string | null
@@ -7,11 +7,6 @@ export class ProfileResponse {
   country: string | null
   birthDate: Date | null
   isPublic: boolean
-  /**
-   * Как показывать оценки. Хранятся всегда по 10-балльной шкале.
-   * AUTO — шкала выбирается по типу тайтла, см. /users/me/rating-scales
-   */
-  ratingScale: RatingScale
 }
 
 /** Полные данные для владельца аккаунта */
@@ -45,15 +40,4 @@ export class PublicProfileResponse {
   country: string | null
   createdAt: Date
   taste: TasteStatsResponse
-}
-
-/**
- * Правило отображения оценок для клиентов. Оценки в API всегда
- * десятибалльные — клиент делит на 2, когда показывает пятибалльную.
- */
-export class RatingScaleRuleResponse {
-  /** Что выбрал пользователь */
-  scale: RatingScale
-  /** Какую шкалу показывать для каждого типа при текущей настройке */
-  byType: Record<string, 'FIVE' | 'TEN'>
 }

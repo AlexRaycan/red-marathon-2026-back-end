@@ -6,16 +6,12 @@ import {
 
 import { PRISMA_UNIQUE_VIOLATION } from '../constants/app.constants'
 import { Prisma } from '../generated/prisma/client'
-import {
-  IntegrationService,
-  TSaveTitle
-} from '../integration/integration.service'
+import { IntegrationService } from '../integration/integration.service'
 import { PrismaService } from '../prisma/prisma.service'
 import {
   TITLE_LIST_ITEM_SELECT,
   toTitleListItemResponse
 } from '../title/title-list-item'
-import { TitleService } from '../title/title.service'
 import { parseDiscoverKey } from '../utils/discover-key'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
 
@@ -28,15 +24,11 @@ import {
   ReviewResponse
 } from './response/review-response'
 
-/** Тайтл отзыва: наш id или ключ витрины, если тайтла у нас может не быть */
-export type TReviewTarget = { titleId: string } | { key: string }
-
 @Injectable()
 export class ReviewService {
   constructor(
     private prisma: PrismaService,
-    private readonly integrationService: IntegrationService,
-    private readonly titleService: TitleService
+    private readonly integrationService: IntegrationService
   ) {}
 
   private SELECT_REVIEW = {
@@ -52,18 +44,6 @@ export class ReviewService {
         profile: { select: { displayName: true, avatarUrl: true } }
       }
     }
-  }
-
-  /** Отзывы на тайтле — публичная страница, авторизация не нужна */
-  async findByTitle(
-    slug: string,
-    query: ReviewQueryDto
-  ): Promise<ReviewListResponse> {
-    const title = await this.titleService.findPublishedBySlug(slug, {
-      id: true
-    })
-
-    return this._findPublicByTitle(title.id, query)
   }
 
   /** Отзывы для детальной страницы витрины — тайтла у нас может ещё не быть */
@@ -130,12 +110,18 @@ export class ReviewService {
    * Тайтл по ключу витрины импортируется здесь же: импорт и отзыв
    * применяются вместе или не применяются вовсе
    */
-  async create(
+  async createByDiscoverKey(
     userId: string,
-    target: TReviewTarget,
+    key: string,
     dto: ReviewFieldsDto
   ): Promise<ReviewResponse> {
-    const saveTitle = await this._prepareTitle(target)
+    const { source, type, externalId } = parseDiscoverKey(key)
+
+    const saveTitle = await this.integrationService.prepareImport(
+      source,
+      externalId,
+      type
+    )
 
     const review = await this.prisma.$transaction(async prisma => {
       const { id: titleId } = await saveTitle(prisma)
@@ -205,23 +191,6 @@ export class ReviewService {
       isHasMore: isHasMorePagination(total, query.skip, query.take),
       total
     }
-  }
-
-  private async _prepareTitle(target: TReviewTarget): Promise<TSaveTitle> {
-    if ('key' in target) {
-      const { source, type, externalId } = parseDiscoverKey(target.key)
-
-      return this.integrationService.prepareImport(source, externalId, type)
-    }
-
-    const title = await this.prisma.title.findUnique({
-      where: { id: target.titleId },
-      select: { id: true, slug: true }
-    })
-
-    if (!title) throw new NotFoundException('Title not found')
-
-    return () => Promise.resolve(title)
   }
 
   /**
