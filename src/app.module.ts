@@ -12,7 +12,6 @@ import { NotificationModule } from './notification/notification.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { ReviewModule } from './review/review.module'
 import { SubscriptionModule } from './subscription/subscription.module'
-import { TitleModule } from './title/title.module'
 import { UserModule } from './user/user.module'
 
 @Module({
@@ -23,7 +22,6 @@ import { UserModule } from './user/user.module'
     PrismaModule,
     AuthModule,
     UserModule,
-    TitleModule,
     DiscoverModule,
     LibraryModule,
     CollectionModule,

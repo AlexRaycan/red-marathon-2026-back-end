@@ -10,12 +10,16 @@ import {
   Post,
   Query
 } from '@nestjs/common'
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags
+} from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 
-import { CreateReviewDto } from './dto/create-review.dto'
 import { ReviewFieldsDto } from './dto/review-fields.dto'
 import { ReviewQueryDto } from './dto/review-query.dto'
 import { UpdateReviewDto } from './dto/update-review.dto'
@@ -31,18 +35,9 @@ import { ReviewService } from './review.service'
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
-  /** Отзывы на тайтле — открыты без авторизации */
-  @Get('title/:slug')
-  @ApiOkResponse({ type: ReviewListResponse })
-  findByTitle(
-    @Param('slug') slug: string,
-    @Query() query: ReviewQueryDto
-  ): Promise<ReviewListResponse> {
-    return this.reviewService.findByTitle(slug, query)
-  }
-
   /** Отзывы по ключу витрины: `tmdb-movie-603`. Тайтла у нас нет — пустой список */
   @Get('discover/:key')
+  @ApiOperation({ operationId: 'titleReviews' })
   @ApiOkResponse({ type: ReviewListResponse })
   findByDiscoverKey(
     @Param('key') key: string,
@@ -52,6 +47,7 @@ export class ReviewController {
   }
 
   @Get('my')
+  @ApiOperation({ operationId: 'myReviews' })
   @Auth()
   @ApiOkResponse({ type: MyReviewListResponse })
   findMy(
@@ -61,18 +57,9 @@ export class ReviewController {
     return this.reviewService.findMy(userId, query)
   }
 
-  @Post()
-  @Auth()
-  @ApiCreatedResponse({ type: ReviewResponse })
-  create(
-    @CurrentUser('id') userId: string,
-    @Body() dto: CreateReviewDto
-  ): Promise<ReviewResponse> {
-    return this.reviewService.create(userId, { titleId: dto.titleId }, dto)
-  }
-
   /** Отзыв по ключу витрины — тайтл сохранится у нас вместе с отзывом */
   @Post('discover/:key')
+  @ApiOperation({ operationId: 'createReview' })
   @Auth()
   @ApiCreatedResponse({ type: ReviewResponse })
   createByDiscoverKey(
@@ -80,10 +67,11 @@ export class ReviewController {
     @Param('key') key: string,
     @Body() dto: ReviewFieldsDto
   ): Promise<ReviewResponse> {
-    return this.reviewService.create(userId, { key }, dto)
+    return this.reviewService.createByDiscoverKey(userId, key, dto)
   }
 
   @Patch(':id')
+  @ApiOperation({ operationId: 'updateReview' })
   @Auth()
   @ApiOkResponse({ type: ReviewResponse })
   update(
@@ -95,6 +83,7 @@ export class ReviewController {
   }
 
   @Delete(':id')
+  @ApiOperation({ operationId: 'deleteReview' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(

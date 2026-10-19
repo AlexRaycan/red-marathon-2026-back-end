@@ -8,7 +8,7 @@ import {
   Param,
   Post
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -26,6 +26,7 @@ export class FriendshipController {
   constructor(private readonly friendshipService: FriendshipService) {}
 
   @Get()
+  @ApiOperation({ operationId: 'myFriends' })
   @Auth()
   @ApiOkResponse({ type: FriendListResponse })
   findAll(@CurrentUser('id') userId: string): Promise<FriendListResponse> {
@@ -34,6 +35,7 @@ export class FriendshipController {
 
   /** Входящие заявки */
   @Get('requests')
+  @ApiOperation({ operationId: 'myFriendRequests' })
   @Auth()
   @ApiOkResponse({ type: FriendRequestListResponse })
   findRequests(
@@ -43,6 +45,7 @@ export class FriendshipController {
   }
 
   @Post('requests')
+  @ApiOperation({ operationId: 'sendFriendRequest' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   request(
@@ -53,6 +56,7 @@ export class FriendshipController {
   }
 
   @Post('requests/:id/accept')
+  @ApiOperation({ operationId: 'acceptFriendRequest' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   accept(
@@ -64,6 +68,7 @@ export class FriendshipController {
 
   /** Отклонить заявку или удалить из друзей */
   @Delete(':id')
+  @ApiOperation({ operationId: 'removeFriend' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   remove(

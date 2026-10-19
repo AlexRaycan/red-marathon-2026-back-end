@@ -15,6 +15,7 @@ import {
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags
 } from '@nestjs/swagger'
 
@@ -23,7 +24,6 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import { PaginationQueryDto } from '../base/pagination-query.dto'
 
 import { CollectionService } from './collection.service'
-import { CollectionTitlesDto } from './dto/collection-titles.dto'
 import { CreateCollectionDto } from './dto/create-collection.dto'
 import { ShareCollectionDto } from './dto/share-collection.dto'
 import { UpdateCollectionDto } from './dto/update-collection.dto'
@@ -39,6 +39,7 @@ export class CollectionController {
   constructor(private readonly collectionService: CollectionService) {}
 
   @Get()
+  @ApiOperation({ operationId: 'myCollections' })
   @Auth()
   @ApiOkResponse({ type: CollectionListResponse })
   findAll(
@@ -50,6 +51,7 @@ export class CollectionController {
 
   /** Публичная подборка по ссылке — без авторизации */
   @Get('public/:username/:slug')
+  @ApiOperation({ operationId: 'publicCollection' })
   @ApiOkResponse({ type: PublicCollectionResponse })
   findPublic(
     @Param('username') username: string,
@@ -59,6 +61,7 @@ export class CollectionController {
   }
 
   @Get(':id')
+  @ApiOperation({ operationId: 'collectionById' })
   @Auth()
   @ApiOkResponse({ type: CollectionResponse })
   findById(
@@ -69,6 +72,7 @@ export class CollectionController {
   }
 
   @Post()
+  @ApiOperation({ operationId: 'createCollection' })
   @Auth()
   @ApiCreatedResponse({ type: CollectionResponse })
   create(
@@ -79,6 +83,7 @@ export class CollectionController {
   }
 
   @Patch(':id')
+  @ApiOperation({ operationId: 'updateCollection' })
   @Auth()
   @ApiOkResponse({ type: CollectionResponse })
   update(
@@ -89,31 +94,8 @@ export class CollectionController {
     return this.collectionService.update(userId, id, dto)
   }
 
-  @Post(':id/titles')
-  @Auth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ type: CollectionResponse })
-  addTitles(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-    @Body() dto: CollectionTitlesDto
-  ): Promise<CollectionResponse> {
-    return this.collectionService.addTitles(userId, id, dto)
-  }
-
-  @Delete(':id/titles')
-  @Auth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ type: CollectionResponse })
-  removeTitles(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-    @Body() dto: CollectionTitlesDto
-  ): Promise<CollectionResponse> {
-    return this.collectionService.removeTitles(userId, id, dto)
-  }
-
   @Put(':id/titles/discover/:key')
+  @ApiOperation({ operationId: 'addToCollection' })
   @Auth()
   @ApiOkResponse({ type: CollectionResponse })
   addTitleByDiscoverKey(
@@ -125,6 +107,7 @@ export class CollectionController {
   }
 
   @Delete(':id/titles/discover/:key')
+  @ApiOperation({ operationId: 'removeFromCollection' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse()
@@ -138,6 +121,7 @@ export class CollectionController {
 
   /** Поделиться подборкой — получатели увидят уведомление */
   @Post(':id/share')
+  @ApiOperation({ operationId: 'shareCollection' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   share(
@@ -149,6 +133,7 @@ export class CollectionController {
   }
 
   @Delete(':id')
+  @ApiOperation({ operationId: 'deleteCollection' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(

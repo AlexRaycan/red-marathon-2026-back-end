@@ -1,5 +1,10 @@
 import { Controller, Get, Param, Query } from '@nestjs/common'
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags
+} from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -24,6 +29,7 @@ export class DiscoverController {
 
   /** Верхний блок главной: фильмы, сериалы, игры, аниме и книги вперемешку */
   @Get('trending')
+  @ApiOperation({ operationId: 'trendingTitles' })
   @ApiOkResponse({ type: [DiscoverItemResponse] })
   getTrending(
     @Query() query: DiscoverQueryDto
@@ -33,6 +39,7 @@ export class DiscoverController {
 
   /** Детальная страница по ключу из карточки: `tmdb-movie-603` */
   @Get(':key')
+  @ApiOperation({ operationId: 'title' })
   @ApiOkResponse({ type: DiscoverDetailsResponse })
   @ApiNotFoundResponse({ type: ErrorResponse })
   findByKey(@Param('key') key: string): Promise<DiscoverDetailsResponse> {
@@ -41,6 +48,7 @@ export class DiscoverController {
 
   /** Статус в библиотеке, свой отзыв и коллекции для детальной страницы */
   @Get(':key/me')
+  @ApiOperation({ operationId: 'userTitle' })
   @Auth()
   @ApiOkResponse({ type: DiscoverMyStateResponse })
   findMyState(

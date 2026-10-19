@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 
 import { Auth } from '../auth/decorators/auth.decorator'
@@ -32,6 +32,7 @@ export class AiController {
 
   /** Рекомендации по вкусовому профилю */
   @Get('recommendations')
+  @ApiOperation({ operationId: 'aiRecommendations' })
   @Auth()
   @ApiOkResponse({ type: AiSuggestionsResponse })
   getRecommendations(
@@ -42,6 +43,7 @@ export class AiController {
 
   /** AI Picker — подбор под настроение */
   @Post('picker')
+  @ApiOperation({ operationId: 'aiPickTitle' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AiSuggestionsResponse })
@@ -52,11 +54,12 @@ export class AiController {
     return this.aiService.pick(userId, dto)
   }
 
-  /** Описание без спойлеров для детальной страницы */
-  @Get('summary/:slug')
+  /** Описание без спойлеров для детальной страницы по ключу: `tmdb-movie-603` */
+  @Get('summary/:key')
+  @ApiOperation({ operationId: 'aiTitleSummary' })
   @Auth()
   @ApiOkResponse({ type: AiSummaryResponse })
-  getSummary(@Param('slug') slug: string): Promise<AiSummaryResponse> {
-    return this.aiService.getSpoilerFreeSummary(slug)
+  getSummary(@Param('key') key: string): Promise<AiSummaryResponse> {
+    return this.aiService.getSpoilerFreeSummary(key)
   }
 }

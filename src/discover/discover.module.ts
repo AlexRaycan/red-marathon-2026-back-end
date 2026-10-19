@@ -21,6 +21,7 @@ import { DiscoverService } from './discover.service'
     })
   ],
   controllers: [DiscoverController],
-  providers: [DiscoverService]
+  providers: [DiscoverService],
+  exports: [DiscoverService]
 })
 export class DiscoverModule {}

@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
 import {
   AI_EXCLUDE_LIMIT,
   AI_RECOMMENDATIONS_COUNT,
   AI_TASTE_SAMPLE_SIZE
 } from '../constants/ai.constants'
+import { DiscoverService } from '../discover/discover.service'
 import { LibraryStatus, TitleType } from '../generated/prisma/enums'
 import { PrismaService } from '../prisma/prisma.service'
 import {
@@ -36,7 +37,8 @@ interface IAiSuggestionsPayload {
 export class AiService {
   constructor(
     private prisma: PrismaService,
-    private readonly openRouter: OpenRouterService
+    private readonly openRouter: OpenRouterService,
+    private readonly discoverService: DiscoverService
   ) {}
 
   async getRecommendations(userId: string): Promise<AiSuggestionsResponse> {
@@ -77,14 +79,13 @@ export class AiService {
     return { items: await this._matchWithLibrary(payload) }
   }
 
-  /** Описание без спойлеров для детальной страницы */
-  async getSpoilerFreeSummary(slug: string): Promise<AiSummaryResponse> {
-    const title = await this.prisma.title.findUnique({
-      where: { slug },
-      select: { name: true, type: true }
-    })
-
-    if (!title) throw new NotFoundException('Title not found')
+  /**
+   * Описание без спойлеров для детальной страницы. Тайтл берём из витрины,
+   * как GET /discover/{key}: в базе его может не быть, и импорт ради
+   * описания не нужен. Карточка уже в кэше, если страницу открывали
+   */
+  async getSpoilerFreeSummary(key: string): Promise<AiSummaryResponse> {
+    const title = await this.discoverService.findByKey(key)
 
     const { summary } = await this.openRouter.chatJson<{ summary?: string }>([
       { role: 'system', content: SYSTEM_PROMPT },

@@ -44,18 +44,6 @@ export interface IExternalTitle {
 }
 
 /**
- * Детали для страницы тайтла. В базе не хранятся — берутся из внешнего
- * API при открытии, поэтому всегда свежие
- */
-export interface ITitleDetails {
-  description?: string
-  ageRating?: string
-  cast: IExternalPerson[]
-  creators: IExternalCreator[]
-  metadata: Record<string, unknown>
-}
-
-/**
  * Каждая внешняя интеграция реализует этот интерфейс.
  * Доменный сервис не знает, из какого API пришли данные.
  */

@@ -5,15 +5,13 @@ import {
 } from '@nestjs/common'
 import { hash, verify } from 'argon2'
 
-import { DEFAULT_RATING_SCALE_BY_TYPE } from '../constants/app.constants'
-import { LibraryStatus, RatingScale } from '../generated/prisma/enums'
+import { LibraryStatus } from '../generated/prisma/enums'
 import { PrismaService } from '../prisma/prisma.service'
 
 import { ChangePasswordDto } from './dto/change-password.dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import {
   PublicProfileResponse,
-  RatingScaleRuleResponse,
   TasteStatsResponse,
   UserResponse
 } from './response/user-response'
@@ -29,8 +27,7 @@ export class UserService {
       avatarUrl: true,
       country: true,
       birthDate: true,
-      isPublic: true,
-      ratingScale: true
+      isPublic: true
     }
   }
 
@@ -95,28 +92,6 @@ export class UserService {
     await this.prisma.user.delete({ where: { id: userId } })
 
     return true
-  }
-
-  /**
-   * Правило отображения оценок. Держим его на бэкенде, чтобы веб, мобилка
-   * и расширение не дублировали одну и ту же таблицу у себя
-   */
-  async getRatingScaleRule(userId: string): Promise<RatingScaleRuleResponse> {
-    const profile = await this.prisma.profile.findUnique({
-      where: { userId },
-      select: { ratingScale: true }
-    })
-
-    const scale = profile?.ratingScale ?? RatingScale.AUTO
-
-    const byType = Object.fromEntries(
-      Object.entries(DEFAULT_RATING_SCALE_BY_TYPE).map(([type, auto]) => [
-        type,
-        scale === RatingScale.AUTO ? auto : scale
-      ])
-    )
-
-    return { scale, byType }
   }
 
   /** Публичный Taste DNA по ссылке — работает без авторизации */

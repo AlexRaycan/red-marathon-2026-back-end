@@ -13,15 +13,9 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addBearerAuth()
     .build()
 
-  // Без этого orval делает хуки вида useAuthControllerRegister.
-  // Собираем короткое имя из домена и метода: useAuthRegister,
-  return SwaggerModule.createDocument(app, config, {
-    operationIdFactory: (controllerKey, methodKey) => {
-      const domain = controllerKey.replace(/Controller$/, '')
-
-      return `${domain.charAt(0).toLowerCase()}${domain.slice(1)}_${methodKey}`
-    }
-  })
+  // operationId задан явно на каждом методе: orval делает из него имя хука,
+  // и оно не должно меняться от переименования класса или метода
+  return SwaggerModule.createDocument(app, config)
 }
 
 export function setupSwagger(app: INestApplication): void {

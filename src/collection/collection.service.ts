@@ -22,7 +22,6 @@ import { isHasMorePagination } from '../utils/is-has-more-pagination'
 
 import { PaginationQueryDto } from '../base/pagination-query.dto'
 
-import { CollectionTitlesDto } from './dto/collection-titles.dto'
 import { CreateCollectionDto } from './dto/create-collection.dto'
 import { ShareCollectionDto } from './dto/share-collection.dto'
 import { UpdateCollectionDto } from './dto/update-collection.dto'
@@ -191,48 +190,6 @@ export class CollectionService {
     return this.findById(userId, id)
   }
 
-  async addTitles(
-    userId: string,
-    id: string,
-    dto: CollectionTitlesDto
-  ): Promise<CollectionResponse> {
-    await this._ensureIsOwner(userId, id)
-
-    await this.prisma.$transaction(async prisma => {
-      await this._ensureTitlesExist(prisma, dto.titleIds)
-
-      await prisma.collection.update({
-        where: { id, userId },
-        data: {
-          titles: { connect: dto.titleIds.map(titleId => ({ id: titleId })) }
-        }
-      })
-    })
-
-    return this.findById(userId, id)
-  }
-
-  async removeTitles(
-    userId: string,
-    id: string,
-    dto: CollectionTitlesDto
-  ): Promise<CollectionResponse> {
-    await this._ensureIsOwner(userId, id)
-
-    await this.prisma.$transaction(async prisma => {
-      await this._ensureTitlesExist(prisma, dto.titleIds)
-
-      await prisma.collection.update({
-        where: { id, userId },
-        data: {
-          titles: { disconnect: dto.titleIds.map(titleId => ({ id: titleId })) }
-        }
-      })
-    })
-
-    return this.findById(userId, id)
-  }
-
   /** Внешний запрос — до транзакции; импорт и связь — атомарно */
   async addTitleByDiscoverKey(
     userId: string,
@@ -348,20 +305,6 @@ export class CollectionService {
   }
 
   // Приватные хелперы
-
-  /** Весь список проверяем до изменения связей, повторяющиеся id допустимы */
-  private async _ensureTitlesExist(
-    prisma: Prisma.TransactionClient,
-    titleIds: string[]
-  ): Promise<void> {
-    const count = await prisma.title.count({
-      where: { id: { in: titleIds } }
-    })
-
-    if (count !== new Set(titleIds).size) {
-      throw new NotFoundException('Title not found')
-    }
-  }
 
   /** На бесплатном тарифе число подборок ограничено */
   private async _ensureWithinPlanLimit(userId: string): Promise<void> {

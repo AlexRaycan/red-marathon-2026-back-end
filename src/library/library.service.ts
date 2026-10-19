@@ -17,7 +17,6 @@ import {
 import { parseDiscoverKey } from '../utils/discover-key'
 import { isHasMorePagination } from '../utils/is-has-more-pagination'
 
-import { CreateLibraryEntryDto } from './dto/create-library-entry.dto'
 import { LibraryQueryDto, LibrarySortEnum } from './dto/library-query.dto'
 import { SetLibraryStatusDto } from './dto/set-library-status.dto'
 import { UpdateLibraryEntryDto } from './dto/update-library-entry.dto'
@@ -64,55 +63,6 @@ export class LibraryService {
       total: totalCount,
       isHasMore: isHasMorePagination(totalCount, query.skip, query.take)
     }
-  }
-
-  /** Запись по тайтлу — карточка тайтла показывает, что он уже в библиотеке */
-  async findByTitle(
-    userId: string,
-    titleId: string
-  ): Promise<LibraryEntryResponse | null> {
-    const entry = await this.prisma.libraryEntry.findUnique({
-      where: { userId_titleId: { userId, titleId } },
-      select: this._getSelectEntry(userId)
-    })
-
-    return entry ? this._toResponse(entry) : null
-  }
-
-  async create(
-    userId: string,
-    dto: CreateLibraryEntryDto
-  ): Promise<LibraryEntryResponse> {
-    const title = await this.prisma.title.findUnique({
-      where: { id: dto.titleId },
-      select: { id: true }
-    })
-
-    if (!title) throw new NotFoundException('Title not found')
-
-    const existing = await this.prisma.libraryEntry.findUnique({
-      where: { userId_titleId: { userId, titleId: dto.titleId } },
-      select: { id: true }
-    })
-
-    if (existing)
-      throw new BadRequestException('Title is already in your library')
-
-    await this._ensureWithinPlanLimit(this.prisma, userId)
-
-    const { titleId, startedAt, finishedAt, ...rest } = dto
-
-    const entry = await this.prisma.libraryEntry.create({
-      data: {
-        ...rest,
-        ...this._getDateFields(dto),
-        userId,
-        titleId
-      },
-      select: this._getSelectEntry(userId)
-    })
-
-    return this._toResponse(entry)
   }
 
   async update(
@@ -185,14 +135,6 @@ export class LibraryService {
 
       return this._toResponse(entry)
     })
-  }
-
-  async delete(userId: string, id: string): Promise<boolean> {
-    const entry = await this._findOwnEntry(userId, id)
-
-    await this.prisma.libraryEntry.delete({ where: { id: entry.id } })
-
-    return true
   }
 
   /** Отзыв не трогаем: оценка остаётся, даже если тайтл убрали из библиотеки */
