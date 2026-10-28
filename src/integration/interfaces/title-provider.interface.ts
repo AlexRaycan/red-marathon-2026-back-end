@@ -1,3 +1,4 @@
+import { IGenre } from '../../constants/genres.constants'
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 
 /** Кем создатель приходится тайтлу — по роли фронт подписывает блок */
@@ -44,6 +45,16 @@ export interface IExternalTitle {
 }
 
 /**
+ * Фильтры поиска; жанры уже сопоставлены с нашим списком.
+ * Жанры — «любой из», годы — включительно, каждая граница необязательна
+ */
+export interface IExternalSearchFilters {
+  genres?: IGenre[]
+  yearFrom?: number
+  yearTo?: number
+}
+
+/**
  * Каждая внешняя интеграция реализует этот интерфейс.
  * Доменный сервис не знает, из какого API пришли данные.
  */
@@ -51,8 +62,16 @@ export interface ITitleProvider {
   readonly source: ExternalSource
   /** Какие типы тайтлов умеет отдавать — по ним роутится поиск */
   readonly supportedTypes: TitleType[]
+  /**
+   * Умеет ли источник фильтровать поиск сам. Если нет, фильтры
+   * применяются к его выдаче после слияния
+   */
+  readonly hasNativeFilters: boolean
 
-  search(query: string): Promise<IExternalTitle[]>
+  search(
+    query: string,
+    filters?: IExternalSearchFilters
+  ): Promise<IExternalTitle[]>
   /** Популярное и свежее — для верхнего блока главной */
   getTrending(): Promise<IExternalTitle[]>
   findByExternalId(

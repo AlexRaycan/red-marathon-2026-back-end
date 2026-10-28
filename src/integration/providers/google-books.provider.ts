@@ -66,6 +66,7 @@ export class GoogleBooksProvider
 {
   readonly source = ExternalSource.GOOGLE_BOOKS
   readonly supportedTypes = [TitleType.BOOK]
+  readonly hasNativeFilters = false
 
   constructor(private readonly configService: ConfigService) {
     super()

@@ -27,6 +27,9 @@ export const SHIKIMORI_USER_AGENT = 'RedMarathon'
 export const SHIKIMORI_API_URL = 'https://shikimori.io/api'
 
 export const EXTERNAL_SEARCH_TAKE = 10
+// Границы фильтра по году выхода
+export const EXTERNAL_MIN_YEAR = 1900
+export const EXTERNAL_MAX_YEAR = 2100
 export const EXTERNAL_REQUEST_TIMEOUT_MS = 8000
 // Публичный поиск расходует квоты источников: лимит на IP
 export const EXTERNAL_SEARCH_RATE_LIMIT = 30

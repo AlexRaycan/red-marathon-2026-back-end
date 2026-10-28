@@ -40,4 +40,6 @@ export class PublicProfileResponse {
   country: string | null
   createdAt: Date
   taste: TasteStatsResponse
+  /** Текст от модели; null, пока владелец его не сгенерировал */
+  tasteInsight: string | null
 }

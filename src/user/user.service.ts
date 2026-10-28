@@ -107,6 +107,13 @@ export class UserService {
       throw new NotFoundException('Profile not found')
     }
 
+    // Только читаем сохранённый текст: публичная страница не должна
+    // запускать платные запросы к модели
+    const insight = await this.prisma.aiTasteInsight.findUnique({
+      where: { userId: user.id },
+      select: { insight: true }
+    })
+
     return {
       username: user.username,
       displayName: user.profile.displayName,
@@ -114,7 +121,8 @@ export class UserService {
       avatarUrl: user.profile.avatarUrl,
       country: user.profile.country,
       createdAt: user.createdAt,
-      taste: await this.getTasteStats(user.id)
+      taste: await this.getTasteStats(user.id),
+      tasteInsight: insight?.insight ?? null
     }
   }
 

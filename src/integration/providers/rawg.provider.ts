@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config'
 
 import { SIMILAR_TAKE } from '../../constants/app.constants'
 import {
+  EXTERNAL_MAX_YEAR,
+  EXTERNAL_MIN_YEAR,
   EXTERNAL_SEARCH_TAKE,
   RAWG_BASE_URL,
   TRENDING_TAKE_PER_SOURCE
@@ -10,6 +12,7 @@ import {
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
   CreatorRoleEnum,
+  IExternalSearchFilters,
   IExternalTitle,
   ITitleProvider
 } from '../interfaces/title-provider.interface'
@@ -63,16 +66,36 @@ interface IRawgListResponse {
 export class RawgProvider extends BaseProvider implements ITitleProvider {
   readonly source = ExternalSource.RAWG
   readonly supportedTypes = [TitleType.GAME]
+  readonly hasNativeFilters = true
 
   constructor(private readonly configService: ConfigService) {
     super()
   }
 
-  async search(query: string): Promise<IExternalTitle[]> {
+  async search(
+    query: string,
+    filters?: IExternalSearchFilters
+  ): Promise<IExternalTitle[]> {
+    const genres = (filters?.genres ?? []).flatMap(({ rawg }) =>
+      rawg ? [rawg] : []
+    )
+
+    // Ни одного из жанров нет в RAWG — игр под такой фильтр не бывает
+    if (filters?.genres?.length && !genres.length) return []
+
+    const { yearFrom, yearTo } = filters ?? {}
+
     const data = await this.fetchJson<IRawgListResponse>(
       this._url('/games', {
         search: query,
-        page_size: String(EXTERNAL_SEARCH_TAKE)
+        page_size: String(EXTERNAL_SEARCH_TAKE),
+        ...(genres.length ? { genres: genres.join(',') } : {}),
+        // Не заданную границу заменяем крайним годом, диапазон должен быть полным
+        ...(yearFrom || yearTo
+          ? {
+              dates: `${yearFrom ?? EXTERNAL_MIN_YEAR}-01-01,${yearTo ?? EXTERNAL_MAX_YEAR}-12-31`
+            }
+          : {})
       })
     )
 

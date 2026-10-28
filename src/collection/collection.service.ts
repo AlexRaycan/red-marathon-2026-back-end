@@ -10,7 +10,10 @@ import { FriendshipService } from '../friendship/friendship.service'
 import { IntegrationService } from '../integration/integration.service'
 import { NotificationService } from '../notification/notification.service'
 import { SubscriptionService } from '../subscription/subscription.service'
-import { FREE_PLAN_LIMITS } from '../constants/app.constants'
+import {
+  FREE_PLAN_LIMITS,
+  PREVIEW_COVERS_LIMIT
+} from '../constants/app.constants'
 import { PrismaService } from '../prisma/prisma.service'
 import {
   TITLE_LIST_ITEM_SELECT,
@@ -30,6 +33,10 @@ import {
   CollectionResponse,
   PublicCollectionResponse
 } from './response/collection-response'
+
+type TTitleRow = Prisma.TitleGetPayload<{
+  select: typeof TITLE_LIST_ITEM_SELECT
+}>
 
 @Injectable()
 export class CollectionService {
@@ -53,6 +60,12 @@ export class CollectionService {
     _count: { select: { titles: true } }
   }
 
+  // Тайтлы в порядке добавления в подборку
+  private SELECT_TITLES = {
+    orderBy: { addedAt: 'asc' },
+    select: { title: { select: TITLE_LIST_ITEM_SELECT } }
+  } satisfies Prisma.Collection$titlesArgs
+
   async findAll(
     userId: string,
     query: PaginationQueryDto
@@ -70,13 +83,25 @@ export class CollectionService {
         take: query.take,
         where,
         orderBy: { updatedAt: 'desc' },
-        select: this.SELECT_LIST_ITEM
+        select: {
+          ...this.SELECT_LIST_ITEM,
+          // Тайтлы без обложки пропускаем, иначе карточка получит дыры
+          titles: {
+            where: { title: { coverUrl: { not: null } } },
+            orderBy: { addedAt: 'asc' },
+            take: PREVIEW_COVERS_LIMIT,
+            select: { title: { select: { coverUrl: true } } }
+          }
+        }
       }),
       this.prisma.collection.count({ where })
     ])
 
     return {
-      items: items.map(item => this._toListItem(item)),
+      items: items.map(({ titles, ...item }) => ({
+        ...this._toListItem(item),
+        previewCovers: this._toPreviewCovers(titles.map(t => t.title.coverUrl))
+      })),
       isHasMore: isHasMorePagination(totalCount, query.skip, query.take)
     }
   }
@@ -87,7 +112,7 @@ export class CollectionService {
       select: {
         ...this.SELECT_LIST_ITEM,
         userId: true,
-        titles: { select: TITLE_LIST_ITEM_SELECT }
+        titles: this.SELECT_TITLES
       }
     })
 
@@ -97,10 +122,7 @@ export class CollectionService {
 
     const { userId: _, titles, ...rest } = collection
 
-    return {
-      ...this._toListItem(rest),
-      titles: titles.map(toTitleListItemResponse)
-    }
+    return this._toCollectionResponse(rest, titles)
   }
 
   /** Публичная подборка по ссылке — открывается без авторизации */
@@ -117,7 +139,7 @@ export class CollectionService {
         coverUrl: true,
         createdAt: true,
         _count: { select: { titles: true } },
-        titles: { select: TITLE_LIST_ITEM_SELECT },
+        titles: this.SELECT_TITLES,
         user: {
           select: {
             username: true,
@@ -134,7 +156,7 @@ export class CollectionService {
 
     return {
       ...rest,
-      titles: titles.map(toTitleListItemResponse),
+      titles: titles.map(({ title }) => toTitleListItemResponse(title)),
       titlesCount: _count.titles,
       owner: {
         username: user.username,
@@ -158,16 +180,13 @@ export class CollectionService {
       },
       select: {
         ...this.SELECT_LIST_ITEM,
-        titles: { select: TITLE_LIST_ITEM_SELECT }
+        titles: this.SELECT_TITLES
       }
     })
 
     const { titles, ...rest } = collection
 
-    return {
-      ...this._toListItem(rest),
-      titles: titles.map(toTitleListItemResponse)
-    }
+    return this._toCollectionResponse(rest, titles)
   }
 
   async update(
@@ -213,11 +232,10 @@ export class CollectionService {
 
       const { id: titleId } = await saveTitle(prisma)
 
-      // connect не дублирует существующую связь
-      await prisma.collection.update({
-        where: { id, userId },
-        data: { titles: { connect: { id: titleId } } },
-        select: { id: true }
+      // skipDuplicates не падает на уже добавленном тайтле и не сдвигает addedAt
+      await prisma.collectionTitle.createMany({
+        data: [{ collectionId: id, titleId }],
+        skipDuplicates: true
       })
     })
 
@@ -242,10 +260,8 @@ export class CollectionService {
 
     if (!title) return
 
-    await this.prisma.collection.update({
-      where: { id, userId },
-      data: { titles: { disconnect: { id: title.id } } },
-      select: { id: true }
+    await this.prisma.collectionTitle.deleteMany({
+      where: { collectionId: id, titleId: title.id }
     })
   }
 
@@ -358,6 +374,25 @@ export class CollectionService {
     }
 
     return `${base}-${Date.now()}`
+  }
+
+  private _toPreviewCovers(covers: (string | null)[]): string[] {
+    return covers
+      .filter((cover): cover is string => cover !== null)
+      .slice(0, PREVIEW_COVERS_LIMIT)
+  }
+
+  private _toCollectionResponse<T extends { _count: { titles: number } }>(
+    collection: T,
+    rows: { title: TTitleRow }[]
+  ) {
+    const titles = rows.map(({ title }) => toTitleListItemResponse(title))
+
+    return {
+      ...this._toListItem(collection),
+      previewCovers: this._toPreviewCovers(titles.map(t => t.coverUrl)),
+      titles
+    }
   }
 
   private _toListItem<T extends { _count: { titles: number } }>(

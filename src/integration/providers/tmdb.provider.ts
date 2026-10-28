@@ -89,6 +89,7 @@ interface ITmdbGenresResponse {
 export class TmdbProvider extends BaseProvider implements ITitleProvider {
   readonly source = ExternalSource.TMDB
   readonly supportedTypes = [TitleType.MOVIE, TitleType.TV_SHOW]
+  readonly hasNativeFilters = false
 
   // Жанры приходят числами — словарь тянем один раз и держим в памяти
   private genresCache: Map<number, string> | null = null

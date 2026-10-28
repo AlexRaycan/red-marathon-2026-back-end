@@ -21,6 +21,8 @@ model User {
   refreshTokens     RefreshToken[]
   deviceCodes       DeviceCode[]
   pushTokens        PushToken[]
+  aiUsages          AiUsage[]
+  tasteInsight      AiTasteInsight?
 
   sentRequests     Friendship[] @relation("FriendshipSender")
   receivedRequests Friendship[] @relation("FriendshipReceiver")

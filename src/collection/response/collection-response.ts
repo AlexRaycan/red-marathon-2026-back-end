@@ -15,6 +15,8 @@ export class CollectionListItemResponse {
   coverUrl: string | null
   isPublic: boolean
   titlesCount: number
+  /** coverUrl первых четырёх тайтлов в порядке добавления, без null */
+  previewCovers: string[]
   createdAt: Date
   updatedAt: Date
 }

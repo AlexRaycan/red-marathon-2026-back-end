@@ -29,7 +29,7 @@ model Title {
   externalSource ExternalSource? @map("external_source")
 
   genres         Genre[]
-  collections    Collection[]
+  collections    CollectionTitle[]
   reviews        Review[]
   libraryEntries LibraryEntry[]
 

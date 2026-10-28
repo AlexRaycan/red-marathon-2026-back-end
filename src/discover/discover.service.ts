@@ -136,7 +136,7 @@ export class DiscoverService {
       }),
       this.reviewService.findMineByTitle(userId, title.id),
       this.prisma.collection.findMany({
-        where: { userId, titles: { some: { id: title.id } } },
+        where: { userId, titles: { some: { titleId: title.id } } },
         select: { id: true }
       })
     ])
