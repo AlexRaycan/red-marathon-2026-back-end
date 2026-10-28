@@ -1,13 +1,10 @@
-import { TitleType } from '../../generated/prisma/enums'
-import { TitleListItemResponse } from '../../title/response/title-response'
+import { DiscoverItemResponse } from '../../discover/response/discover-response'
 
 export class AiSuggestionResponse {
-  name: string
-  type: TitleType
+  /** Карточка витрины с key — открывается через GET /discover/{key} */
+  item: DiscoverItemResponse
   /** Почему модель это предложила */
   reason: string
-  /** Заполнен, если тайтл уже есть в нашей базе */
-  title: TitleListItemResponse | null
 }
 
 export class AiSuggestionsResponse {
@@ -16,4 +13,10 @@ export class AiSuggestionsResponse {
 
 export class AiSummaryResponse {
   summary: string
+}
+
+export class TasteInsightResponse {
+  insight: string
+  /** Текст обновляется раз в неделю */
+  generatedAt: Date
 }

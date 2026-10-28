@@ -16,6 +16,7 @@ import {
 import { ExternalSearchDto } from './dto/external-search.dto'
 import { IntegrationService } from './integration.service'
 import { ExternalTitleResponse } from './response/external-title-response'
+import { GenreResponse } from './response/genre-response'
 
 @ApiTags('external')
 @Controller('external')
@@ -35,6 +36,18 @@ export class IntegrationController {
   @ApiOkResponse({ type: [ExternalTitleResponse] })
   @ApiTooManyRequestsResponse({ type: ErrorResponse })
   search(@Query() dto: ExternalSearchDto): Promise<ExternalTitleResponse[]> {
-    return this.integrationService.search(dto.q, dto.type)
+    return this.integrationService.search(dto.q, dto.type, {
+      genres: dto.genre,
+      yearFrom: dto.yearFrom,
+      yearTo: dto.yearTo
+    })
+  }
+
+  /** Общий список жанров для фильтра: у каждого источника свои названия */
+  @Get('genres')
+  @ApiOperation({ operationId: 'externalGenres' })
+  @ApiOkResponse({ type: [GenreResponse] })
+  findGenres(): GenreResponse[] {
+    return this.integrationService.getGenres()
   }
 }

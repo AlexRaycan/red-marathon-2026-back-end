@@ -1,3 +1,5 @@
+import { TitleType } from '../../generated/prisma/enums'
+
 export interface IChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -7,8 +9,14 @@ export interface IChatCompletionChoice {
   message?: { content?: string }
 }
 
+export interface IChatCompletionUsage {
+  prompt_tokens?: number
+  completion_tokens?: number
+}
+
 export interface IChatCompletionResponse {
   choices?: IChatCompletionChoice[]
+  usage?: IChatCompletionUsage
   error?: { message?: string }
 }
 
@@ -27,4 +35,12 @@ export interface ITasteContext {
   recentlyCompleted: ITitleBrief[]
   inProgress: ITitleBrief[]
   averageRating: number | null
+}
+
+/** Название, которое вернула модель, до сопоставления с внешним API */
+export interface IAiSuggestionCandidate {
+  name: string
+  type: TitleType
+  year: number
+  reason: string
 }

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common'
 
 import { SIMILAR_TAKE } from '../../constants/app.constants'
 import {
+  EXTERNAL_MAX_YEAR,
+  EXTERNAL_MIN_YEAR,
   EXTERNAL_SEARCH_TAKE,
   SHIKIMORI_API_URL,
   SHIKIMORI_GRAPHQL_URL,
@@ -11,6 +13,7 @@ import {
 import { ExternalSource, TitleType } from '../../generated/prisma/enums'
 import {
   CreatorRoleEnum,
+  IExternalSearchFilters,
   IExternalTitle,
   ITitleProvider
 } from '../interfaces/title-provider.interface'
@@ -79,6 +82,7 @@ interface IShikimoriVariables {
   ids?: string
   order?: 'popularity'
   season?: string
+  genre?: string
   limit?: number
 }
 
@@ -88,6 +92,7 @@ const ANIMES_QUERY = `
     $ids: String
     $order: OrderEnum
     $season: SeasonString
+    $genre: String
     $limit: PositiveInt
   ) {
     animes(
@@ -95,6 +100,7 @@ const ANIMES_QUERY = `
       ids: $ids
       order: $order
       season: $season
+      genre: $genre
       limit: $limit
     ) {
       id
@@ -119,14 +125,43 @@ const ANIMES_QUERY = `
 export class ShikimoriProvider extends BaseProvider implements ITitleProvider {
   readonly source = ExternalSource.SHIKIMORI
   readonly supportedTypes = [TitleType.ANIME]
+  readonly hasNativeFilters = true
 
-  async search(query: string): Promise<IExternalTitle[]> {
-    const items = await this._fetchAnimes({
-      search: query,
-      limit: EXTERNAL_SEARCH_TAKE
-    })
+  async search(
+    query: string,
+    filters?: IExternalSearchFilters
+  ): Promise<IExternalTitle[]> {
+    const genreIds = (filters?.genres ?? []).flatMap(({ shikimori }) =>
+      shikimori ? [shikimori] : []
+    )
 
-    return items.map(anime => this._toExternalTitle(anime))
+    // Ни одного из жанров нет в Shikimori — аниме под такой фильтр не бывает
+    if (filters?.genres?.length && !genreIds.length) return []
+
+    const { yearFrom, yearTo } = filters ?? {}
+
+    // Не заданную границу заменяем крайним годом, диапазон должен быть полным
+    const season =
+      yearFrom || yearTo
+        ? `${yearFrom ?? EXTERNAL_MIN_YEAR}_${yearTo ?? EXTERNAL_MAX_YEAR}`
+        : undefined
+
+    // Запятая в genre у Shikimori значит «И» (тайтл со всеми жанрами сразу),
+    // а нам нужно «ИЛИ» — поэтому запрос на каждый жанр и слияние без дублей
+    const results = await Promise.all(
+      (genreIds.length ? genreIds : [undefined]).map(genre =>
+        this._fetchAnimes({
+          search: query,
+          genre,
+          season,
+          limit: EXTERNAL_SEARCH_TAKE
+        })
+      )
+    )
+
+    const unique = new Map(results.flat().map(anime => [anime.id, anime]))
+
+    return [...unique.values()].map(anime => this._toExternalTitle(anime))
   }
 
   /** Популярное аниме прошлого и текущего года */

@@ -11,7 +11,7 @@ model Collection {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Подборка может смешивать типы: «Ведьмак» = игра + книга + сериал
-  titles Title[]
+  titles CollectionTitle[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -21,4 +21,20 @@ model Collection {
   @@index([userId])
   @@index([isPublic])
   @@map("collections")
+}
+
+/// Связь подборки с тайтлом. Явная модель, а не неявная many-to-many:
+/// нужен addedAt, чтобы показывать обложки в порядке добавления
+model CollectionTitle {
+  collectionId String     @map("collection_id")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  titleId String @map("title_id")
+  title   Title  @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  addedAt DateTime @default(now()) @map("added_at")
+
+  @@id([collectionId, titleId])
+  @@index([titleId])
+  @@map("collection_titles")
 }

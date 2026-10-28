@@ -8,11 +8,17 @@ import {
   Post,
   UseGuards
 } from '@nestjs/common'
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiTooManyRequestsResponse
+} from '@nestjs/swagger'
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { ErrorResponse } from '../common/response/error-response'
 import { AI_RATE_LIMIT, AI_RATE_TTL_MS } from '../constants/ai.constants'
 
 import { AiService } from './ai.service'
@@ -41,12 +47,13 @@ export class AiController {
     return this.aiService.getRecommendations(userId)
   }
 
-  /** AI Picker — подбор под настроение */
+  /** AI Picker — подбор под настроение. На бесплатном тарифе есть дневной лимит */
   @Post('picker')
   @ApiOperation({ operationId: 'aiPickTitle' })
   @Auth()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AiSuggestionsResponse })
+  @ApiTooManyRequestsResponse({ type: ErrorResponse })
   pick(
     @CurrentUser('id') userId: string,
     @Body() dto: PickerDto

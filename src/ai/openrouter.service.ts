@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { Logger } from '@nestjs/common'
 
 import {
+  AI_MAX_TOKENS,
   AI_REQUEST_TIMEOUT_MS,
   OPENROUTER_BASE_URL,
   OPENROUTER_MODEL
@@ -24,9 +25,18 @@ export class OpenRouterService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  /** Свободный ответ текстом */
-  async chat(messages: IChatMessage[], asJson = false): Promise<string> {
+  /** Свободный ответ текстом. `purpose` попадает в лог расхода токенов */
+  async chat(
+    messages: IChatMessage[],
+    purpose: string,
+    asJson = false
+  ): Promise<string> {
     const data = await this._request(messages, asJson)
+
+    // Расход токенов пишем на каждый вызов, чтобы посчитать реальную цену
+    this.logger.log(
+      `${purpose}: tokens in=${data.usage?.prompt_tokens ?? '?'} out=${data.usage?.completion_tokens ?? '?'}`
+    )
 
     const content = data.choices?.[0]?.message?.content
 
@@ -40,8 +50,8 @@ export class OpenRouterService {
    * Ответ, разобранный в объект. Модели любят оборачивать JSON
    * в markdown-блок, поэтому чистим перед разбором.
    */
-  async chatJson<T>(messages: IChatMessage[]): Promise<T> {
-    const content = await this.chat(messages, true)
+  async chatJson<T>(messages: IChatMessage[], purpose: string): Promise<T> {
+    const content = await this.chat(messages, purpose, true)
 
     try {
       return JSON.parse(this._extractJson(content)) as T
@@ -76,6 +86,7 @@ export class OpenRouterService {
         body: JSON.stringify({
           model: OPENROUTER_MODEL,
           messages,
+          max_tokens: AI_MAX_TOKENS,
           // Модель не сможет обернуть JSON в markdown или текст.
           // Поддерживают не все модели — отсюда запасной парсер ниже
           ...(asJson ? { response_format: { type: 'json_object' } } : {})

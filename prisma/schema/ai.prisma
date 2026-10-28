@@ -1,0 +1,51 @@
+/// Описание без спойлеров. Хранится навсегда и на тайтл, а не на пользователя:
+/// один запрос к модели на весь каталог
+model AiSummary {
+  id String @id @default(cuid())
+
+  // Ключ витрины: `tmdb-movie-603`
+  key     String @unique
+  summary String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_summaries")
+}
+
+/// Один платный запрос пользователя к модели. По числу строк за сутки
+/// считаем дневной лимит бесплатного тарифа
+model AiUsage {
+  id   String      @id @default(cuid())
+  kind AiUsageKind
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("ai_usages")
+}
+
+enum AiUsageKind {
+  PICKER
+  TASTE_INSIGHT
+
+  @@map("ai_usage_kinds")
+}
+
+/// Текст Taste DNA от модели. Живёт неделю (по updatedAt); публичная
+/// страница только читает его и модель сама не вызывает
+model AiTasteInsight {
+  id      String @id @default(cuid())
+  insight String
+
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_taste_insights")
+}

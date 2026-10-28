@@ -11,6 +11,9 @@ export const PRISMA_UNIQUE_VIOLATION = 'P2002'
 
 export const SIMILAR_TAKE = 10
 
+/** Сколько обложек отдаём в карточку подборки */
+export const PREVIEW_COVERS_LIMIT = 4
+
 /** PRO снимает эти ограничения */
 export const FREE_PLAN_LIMITS = {
   collections: 5,

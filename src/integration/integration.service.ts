@@ -1,7 +1,13 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common'
 import { Cache } from 'cache-manager'
 
+import { GENRES, IGenre } from '../constants/genres.constants'
 import { EXTERNAL_CACHE_TTL_MS } from '../constants/integration.constants'
 
 import { Prisma } from '../generated/prisma/client'
@@ -9,8 +15,10 @@ import { ExternalSource, TitleType } from '../generated/prisma/enums'
 import { PrismaService } from '../prisma/prisma.service'
 import { toDiscoverKey } from '../utils/discover-key'
 import { generateSlug } from '../utils/generate-slug'
+import { normalizeText } from '../utils/normalize-text'
 
 import {
+  IExternalSearchFilters,
   IExternalTitle,
   ITitleProvider
 } from './interfaces/title-provider.interface'
@@ -22,6 +30,7 @@ import {
   ExternalTitleResponse,
   ImportedTitleResponse
 } from './response/external-title-response'
+import { GenreResponse } from './response/genre-response'
 
 /** Сохранение тайтла, отложенное до транзакции вызывающего */
 export type TSaveTitle = (
@@ -46,14 +55,34 @@ export class IntegrationService {
   /**
    * Поиск во внешних источниках. Провайдеры опрашиваются параллельно,
    * упавший источник не ломает выдачу остальных.
+   *
+   * С фильтрами кэш не используем: RAWG и Shikimori получают их в запросе,
+   * поэтому их ответ уже не тот, что для обычного поиска, и под ключом
+   * (запрос, типы) он испортил бы выдачу без фильтров
    */
   async search(
     query: string,
-    types?: TitleType[]
+    types?: TitleType[],
+    filters?: { genres?: string[]; yearFrom?: number; yearTo?: number }
   ): Promise<ExternalTitleResponse[]> {
+    const { yearFrom, yearTo } = filters ?? {}
+
+    if (yearFrom && yearTo && yearFrom > yearTo) {
+      throw new BadRequestException('yearFrom must not be greater than yearTo')
+    }
+
+    const resolved: IExternalSearchFilters = {
+      genres: GENRES.filter(({ slug }) => filters?.genres?.includes(slug)),
+      yearFrom,
+      yearTo
+    }
+
+    const hasFilters = Boolean(resolved.genres?.length || yearFrom || yearTo)
     const cacheKey = this._getCacheKey(query, types)
 
-    const cached = await this.cache.get<ExternalTitleResponse[]>(cacheKey)
+    const cached = hasFilters
+      ? undefined
+      : await this.cache.get<ExternalTitleResponse[]>(cacheKey)
 
     if (cached) return cached
 
@@ -64,7 +93,14 @@ export class IntegrationService {
       : this.providers
 
     const results = await Promise.all(
-      providers.map(provider => provider.search(query))
+      providers.map(async provider => {
+        const items = await provider.search(query, resolved)
+
+        // TMDB и Google Books фильтровать не умеют — режем их выдачу сами
+        return provider.hasNativeFilters
+          ? items
+          : this._applyFilters(items, resolved)
+      })
     )
 
     // Сначала популярное: по неточному названию это чаще нужный тайтл
@@ -89,7 +125,7 @@ export class IntegrationService {
 
     // Пустую выдачу не кешируем: она чаще означает недоступный источник,
     // а не отсутствие результата
-    if (items.length) {
+    if (items.length && !hasFilters) {
       await this.cache.set(cacheKey, items, EXTERNAL_CACHE_TTL_MS)
     }
 
@@ -146,6 +182,41 @@ export class IntegrationService {
   }
 
   // Приватные хелперы
+
+  /** Список жанров для фильтра на фронте */
+  getGenres(): GenreResponse[] {
+    return GENRES.map(({ slug, label }) => ({ slug, label }))
+  }
+
+  /**
+   * Без года или жанра у тайтла фильтру нечем его подтвердить,
+   * поэтому такой тайтл в отфильтрованную выдачу не попадает
+   */
+  private _applyFilters(
+    items: IExternalTitle[],
+    { genres, yearFrom, yearTo }: IExternalSearchFilters
+  ): IExternalTitle[] {
+    return items.filter(item => {
+      if (yearFrom || yearTo) {
+        const year = item.releaseDate?.getUTCFullYear()
+
+        if (!year || year < (yearFrom ?? 0) || year > (yearTo ?? Infinity)) {
+          return false
+        }
+      }
+
+      return (
+        !genres?.length ||
+        genres.some(genre => this._hasGenre(item.genres, genre))
+      )
+    })
+  }
+
+  private _hasGenre(itemGenres: string[], genre: IGenre): boolean {
+    return itemGenres.some(name =>
+      genre.aliases.some(alias => normalizeText(name).includes(alias))
+    )
+  }
 
   private _getCacheKey(query: string, types?: TitleType[]): string {
     const suffix = types?.length ? [...types].sort().join(',') : 'all'
