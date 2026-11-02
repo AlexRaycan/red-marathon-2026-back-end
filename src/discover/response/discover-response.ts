@@ -1,8 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 import {
   ExternalSource,
   LibraryStatus,
+  ProgressUnit,
   TitleType
 } from '../../generated/prisma/enums'
 import { ReviewResponse } from '../../review/response/review-response'
@@ -26,6 +27,38 @@ export class DiscoverItemResponse {
   genres: string[]
 }
 
+/** Специфика типа; чего у тайтла нет — null */
+export class TitleMetadataResponse {
+  /** Длительность фильма, мин (TMDB movie) */
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  runtimeMinutes?: number | null
+
+  /** Число серий (TMDB tv, Shikimori) */
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  episodeCount?: number | null
+
+  /** Длительность серии, мин (Shikimori); у сериалов TMDB её нет */
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  episodeRuntimeMinutes?: number | null
+
+  /** Страницы книги (Google Books) */
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  pageCount?: number | null
+
+  /** Платформы игры (RAWG) */
+  @ApiPropertyOptional({ type: [String], nullable: true })
+  platforms?: string[] | null
+
+  /** Оценка Metacritic, 0–100 (RAWG) */
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    minimum: 0,
+    maximum: 100
+  })
+  metacritic?: number | null
+}
+
 /** Детальная страница целиком из внешнего API */
 export class DiscoverDetailsResponse extends DiscoverItemResponse {
   originalName: string | null
@@ -37,8 +70,7 @@ export class DiscoverDetailsResponse extends DiscoverItemResponse {
   cast: PersonResponse[]
   /** Режиссёр, автор идеи сериала, студия игры или аниме, автор книги */
   creators: CreatorResponse[]
-  /** Страницы книги, платформы игры, число серий */
-  metadata: Record<string, unknown>
+  metadata: TitleMetadataResponse
   /** «You may also like» — приходит вместе со страницей, отдельный запрос не нужен */
   similar: DiscoverItemResponse[]
 }
@@ -46,6 +78,8 @@ export class DiscoverDetailsResponse extends DiscoverItemResponse {
 export class MyLibraryStatusResponse {
   id: string
   status: LibraryStatus
+  progress: number | null
+  progressUnit: ProgressUnit | null
 }
 
 /** Что текущий пользователь уже сделал с тайтлом витрины */

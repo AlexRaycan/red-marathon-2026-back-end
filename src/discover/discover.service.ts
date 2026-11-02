@@ -102,7 +102,14 @@ export class DiscoverService {
       ageRating: external.ageRating ?? null,
       cast: (external.cast ?? []).map(toPersonResponse),
       creators: (external.creators ?? []).map(toPersonResponse),
-      metadata: external.metadata ?? {},
+      metadata: {
+        runtimeMinutes: external.metadata?.runtimeMinutes ?? null,
+        episodeCount: external.metadata?.episodeCount ?? null,
+        episodeRuntimeMinutes: external.metadata?.episodeRuntimeMinutes ?? null,
+        pageCount: external.metadata?.pageCount ?? null,
+        platforms: external.metadata?.platforms ?? null,
+        metacritic: external.metadata?.metacritic ?? null
+      },
       similar: similar
         .map(item => this._toItem(item))
         .filter(item => item.key !== card.key)
@@ -132,7 +139,7 @@ export class DiscoverService {
     const [libraryEntry, review, collections] = await Promise.all([
       this.prisma.libraryEntry.findUnique({
         where: { userId_titleId: { userId, titleId: title.id } },
-        select: { id: true, status: true }
+        select: { id: true, status: true, progress: true, progressUnit: true }
       }),
       this.reviewService.findMineByTitle(userId, title.id),
       this.prisma.collection.findMany({

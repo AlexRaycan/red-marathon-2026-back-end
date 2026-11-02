@@ -250,10 +250,8 @@ export class ShikimoriProvider extends BaseProvider implements ITitleProvider {
         role: CreatorRoleEnum.Studio
       })),
       metadata: {
-        ...(anime.episodes ? { episodes: anime.episodes } : {}),
-        ...(anime.duration ? { episodeDurationMinutes: anime.duration } : {}),
-        ...(anime.kind ? { kind: anime.kind } : {}),
-        ...(anime.status ? { airingStatus: anime.status } : {})
+        episodeCount: anime.episodes || undefined,
+        episodeRuntimeMinutes: anime.duration || undefined
       }
     }
   }

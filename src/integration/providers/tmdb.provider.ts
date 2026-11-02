@@ -210,11 +210,8 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
         .flatMap(person => this._toPerson(person)),
       creators: this._getCreators(item),
       metadata: {
-        ...(item.number_of_seasons ? { seasons: item.number_of_seasons } : {}),
-        ...(item.number_of_episodes
-          ? { episodes: item.number_of_episodes }
-          : {}),
-        ...(item.runtime ? { runtimeMinutes: item.runtime } : {})
+        runtimeMinutes: item.runtime || undefined,
+        episodeCount: item.number_of_episodes || undefined
       }
     }
   }
