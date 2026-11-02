@@ -211,10 +211,7 @@ export class GoogleBooksProvider
         role: CreatorRoleEnum.Author
       })),
       metadata: {
-        authors: info.authors ?? [],
-        ...(info.pageCount ? { pageCount: info.pageCount } : {}),
-        ...(info.publisher ? { publisher: info.publisher } : {}),
-        ...(info.language ? { language: info.language } : {})
+        pageCount: info.pageCount || undefined
       }
     }
   }

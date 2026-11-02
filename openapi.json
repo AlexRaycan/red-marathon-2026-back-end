@@ -2938,6 +2938,46 @@
           "photoUrl"
         ]
       },
+      "TitleMetadataResponse": {
+        "type": "object",
+        "properties": {
+          "runtimeMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Длительность фильма, мин (TMDB movie)"
+          },
+          "episodeCount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Число серий (TMDB tv, Shikimori)"
+          },
+          "episodeRuntimeMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Длительность серии, мин (Shikimori); у сериалов TMDB её нет"
+          },
+          "pageCount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Страницы книги (Google Books)"
+          },
+          "platforms": {
+            "nullable": true,
+            "description": "Платформы игры (RAWG)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metacritic": {
+            "type": "number",
+            "nullable": true,
+            "description": "Оценка Metacritic, 0–100 (RAWG)",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      },
       "DiscoverDetailsResponse": {
         "type": "object",
         "properties": {
@@ -3021,9 +3061,7 @@
             }
           },
           "metadata": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Страницы книги, платформы игры, число серий"
+            "$ref": "#/components/schemas/TitleMetadataResponse"
           },
           "similar": {
             "description": "«You may also like» — приходит вместе со страницей, отдельный запрос не нужен",
@@ -3068,11 +3106,28 @@
               "ON_HOLD",
               "DROPPED"
             ]
+          },
+          "progress": {
+            "type": "number",
+            "nullable": true
+          },
+          "progressUnit": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "EPISODE",
+              "CHAPTER",
+              "PAGE",
+              "HOUR",
+              "PERCENT"
+            ]
           }
         },
         "required": [
           "id",
-          "status"
+          "status",
+          "progress",
+          "progressUnit"
         ]
       },
       "ReviewAuthorResponse": {

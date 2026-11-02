@@ -40,8 +40,20 @@ export interface IExternalTitle {
   cast?: IExternalPerson[]
   /** Режиссёр, автор идеи сериала, студия игры или аниме, автор книги */
   creators?: IExternalCreator[]
-  /** Специфика типа: страницы книги, платформы игры, число серий */
-  metadata?: Record<string, unknown>
+  /** Специфика типа: длительность, число серий, страницы, платформы */
+  metadata?: ITitleMetadata
+}
+
+/** Не заданное источником поле просто отсутствует */
+export interface ITitleMetadata {
+  /** Длительность фильма */
+  runtimeMinutes?: number
+  episodeCount?: number
+  episodeRuntimeMinutes?: number
+  pageCount?: number
+  platforms?: string[]
+  /** Оценка Metacritic, 0–100 */
+  metacritic?: number
 }
 
 /**

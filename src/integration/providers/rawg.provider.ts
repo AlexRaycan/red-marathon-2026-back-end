@@ -210,8 +210,7 @@ export class RawgProvider extends BaseProvider implements ITitleProvider {
         role: CreatorRoleEnum.Studio
       })),
       metadata: {
-        ...(game.metacritic ? { metacritic: game.metacritic } : {}),
-        ...(game.playtime ? { averagePlaytimeHours: game.playtime } : {}),
+        metacritic: game.metacritic || undefined,
         platforms: (game.platforms ?? []).map(({ platform }) => platform.name)
       }
     }
