@@ -10,7 +10,12 @@ import {
   Post,
   Query
 } from '@nestjs/common'
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags
+} from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
@@ -90,6 +95,7 @@ export class NotificationController {
   @ApiOperation({ operationId: 'deleteNotification' })
   @Auth()
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse()
   delete(
     @CurrentUser('id') userId: string,
     @Param('id') id: string

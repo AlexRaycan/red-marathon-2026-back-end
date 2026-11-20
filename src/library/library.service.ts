@@ -4,7 +4,7 @@ import {
   NotFoundException
 } from '@nestjs/common'
 
-import { FREE_PLAN_LIMITS } from '../constants/app.constants'
+import { BILLING_ENABLED, FREE_PLAN_LIMITS } from '../constants/app.constants'
 import { Prisma } from '../generated/prisma/client'
 import { LibraryStatus } from '../generated/prisma/enums'
 import { IntegrationService } from '../integration/integration.service'
@@ -200,6 +200,7 @@ export class LibraryService {
     prisma: Prisma.TransactionClient,
     userId: string
   ): Promise<void> {
+    if (!BILLING_ENABLED) return
     if (await this.subscriptionService.isProActive(userId)) return
 
     const count = await prisma.libraryEntry.count({ where: { userId } })

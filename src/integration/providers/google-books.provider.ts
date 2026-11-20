@@ -84,7 +84,7 @@ export class GoogleBooksProvider
   }
 
   /**
-   * Трендов у Google Books нет — берём свежую англоязычную художку.
+   * Трендов у Google Books нет — берём релевантную англоязычную художку.
    * Книги, для которых обложки нет ни в Google, ни в Open Library,
    * отсекаем: в верхнем блоке главной они смотрятся пусто
    */
@@ -92,16 +92,31 @@ export class GoogleBooksProvider
     const data = await this.fetchJson<IGoogleBooksResponse>(
       this._url('/volumes', {
         q: 'subject:fiction',
-        orderBy: 'newest',
         printType: 'books',
         langRestrict: 'en',
-        maxResults: String(TRENDING_TAKE_PER_SOURCE)
+        maxResults: String(GOOGLE_BOOKS_MAX_RESULTS)
       })
     )
 
-    const items = await this._toExternalTitles(data?.items ?? [])
+    if (!data) return []
 
-    return items.filter(({ coverUrl }) => Boolean(coverUrl))
+    // orderBy=newest у Google нестабилен (часто 0 результатов), поэтому
+    // берём релевантную выборку и сортируем по дате издания сами
+    const books = (data.items ?? [])
+      .sort((a, b) =>
+        (b.volumeInfo?.publishedDate ?? '').localeCompare(
+          a.volumeInfo?.publishedDate ?? ''
+        )
+      )
+      .slice(0, TRENDING_TAKE_PER_SOURCE)
+    const items = await this._toExternalTitles(books)
+    const withCovers = items.filter(({ coverUrl }) => Boolean(coverUrl))
+
+    this.logger.log(
+      `Trending: ${books.length} books from API, ${items.length} with titles, ${withCovers.length} with covers; ${items.length - withCovers.length} excluded without covers`
+    )
+
+    return withCovers
   }
 
   async findByExternalId(externalId: string): Promise<IExternalTitle | null> {

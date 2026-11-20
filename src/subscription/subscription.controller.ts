@@ -4,13 +4,15 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Post
+  Post,
+  UseGuards
 } from '@nestjs/common'
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { Auth } from '../auth/decorators/auth.decorator'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 
+import { BillingEnabledGuard } from './guards/billing-enabled.guard'
 import { VerifyPurchaseDto } from './dto/verify-purchase.dto'
 import { SubscriptionResponse } from './response/subscription-response'
 import { SubscriptionService } from './subscription.service'
@@ -34,6 +36,7 @@ export class SubscriptionController {
    * Веб и расширение сюда не ходят: оплата только в сторах
    */
   @Post('verify')
+  @UseGuards(BillingEnabledGuard)
   @ApiOperation({ operationId: 'verifyPurchase' })
   @Auth()
   @HttpCode(HttpStatus.OK)
@@ -46,6 +49,7 @@ export class SubscriptionController {
   }
 
   @Post('trial')
+  @UseGuards(BillingEnabledGuard)
   @ApiOperation({ operationId: 'startTrial' })
   @Auth()
   @HttpCode(HttpStatus.OK)
@@ -55,6 +59,7 @@ export class SubscriptionController {
   }
 
   @Post('cancel')
+  @UseGuards(BillingEnabledGuard)
   @ApiOperation({ operationId: 'cancelSubscription' })
   @Auth()
   @HttpCode(HttpStatus.OK)

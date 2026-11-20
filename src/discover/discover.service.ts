@@ -172,7 +172,8 @@ export class DiscoverService {
 
     const items = await provider.getTrending()
 
-    // Пустую выдачу не кешируем: скорее всего источник недоступен
+    // Пустую выдачу не кешируем: скорее всего источник недоступен,
+    // а причина уже залогирована провайдером
     if (items.length) {
       await this.cache.set(cacheKey, items, TRENDING_CACHE_TTL_MS)
     }

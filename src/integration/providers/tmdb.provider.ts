@@ -7,6 +7,7 @@ import {
   TMDB_AGE_RATING_COUNTRY,
   TMDB_BASE_URL,
   TMDB_CAST_LIMIT,
+  TMDB_IMAGE_PROXY_PATH,
   TMDB_IMAGE_URL,
   TRENDING_TAKE_PER_SOURCE
 } from '../../constants/integration.constants'
@@ -197,9 +198,7 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
       name: item.title ?? item.name ?? '',
       originalName: item.original_title ?? item.original_name,
       description: item.overview || undefined,
-      coverUrl: item.poster_path
-        ? `${TMDB_IMAGE_URL}${item.poster_path}`
-        : undefined,
+      coverUrl: item.poster_path ? this._imageUrl(item.poster_path) : undefined,
       releaseDate: this.toDate(item.release_date ?? item.first_air_date),
       rating: item.vote_average,
       ratingCount: item.vote_count,
@@ -257,9 +256,17 @@ export class TmdbProvider extends BaseProvider implements ITitleProvider {
     return [
       {
         name,
-        photoUrl: profile_path ? `${TMDB_IMAGE_URL}${profile_path}` : undefined
+        photoUrl: profile_path ? this._imageUrl(profile_path) : undefined
       }
     ]
+  }
+
+  private _imageUrl(path: string): string {
+    const publicUrl = this.configService.get<string>('PUBLIC_API_URL')
+
+    return publicUrl
+      ? `${publicUrl}${TMDB_IMAGE_PROXY_PATH}${path}`
+      : `${TMDB_IMAGE_URL}${path}`
   }
 
   private async _getGenres(): Promise<Map<number, string>> {

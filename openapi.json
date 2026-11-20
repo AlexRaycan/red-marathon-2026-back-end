@@ -2107,14 +2107,7 @@
         ],
         "responses": {
           "204": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
+            "description": ""
           }
         },
         "security": [
@@ -4079,7 +4072,7 @@
           "token": {
             "type": "string",
             "description": "Токен из expo-notifications: ExponentPushToken[xxxxxxxx]",
-            "pattern": "^ExponentPushToken\\[.+\\]$"
+            "pattern": "^(ExponentPushToken|ExpoPushToken)\\[.+\\]$"
           },
           "platform": {
             "type": "string",

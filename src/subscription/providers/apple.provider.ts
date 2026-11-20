@@ -54,6 +54,10 @@ export class AppleProvider implements IStoreProvider {
   constructor(private readonly configService: ConfigService) {}
 
   async verify(transactionId: string): Promise<IVerifiedPurchase> {
+    if (this.configService.get<string>('APPLE_ENVIRONMENT') === 'local') {
+      return this._buildLocalPurchase(transactionId)
+    }
+
     const data = await this._request<IAppleTransactionResponse>(
       `/transactions/${transactionId}`
     )
@@ -95,6 +99,26 @@ export class AppleProvider implements IStoreProvider {
   }
 
   // Приватные хелперы
+
+  /**
+   * Только для локальной разработки: транзакции StoreKit Testing живут
+   * на устройстве, Apple о них не знает, поэтому проверить их нечем
+   */
+  private _buildLocalPurchase(transactionId: string): IVerifiedPurchase {
+    const expiresAt = new Date()
+    expiresAt.setMonth(expiresAt.getMonth() + 1)
+
+    return {
+      provider: this.provider,
+      originalTransactionId: `local-${transactionId}`,
+      productId: 'local',
+      purchaseToken: transactionId,
+      expiresAt,
+      isActive: true,
+      autoRenew: true,
+      isTrial: false
+    }
+  }
 
   private _decodeJws<T>(signed: string): T | null {
     try {
