@@ -11,7 +11,7 @@ export class VerifyPurchaseDto {
   readonly provider: SubscriptionProvider
 
   @IsString()
-  @MinLength(4, { message: 'Invalid purchase token' })
+  @MinLength(1, { message: 'Invalid purchase token' })
   @MaxLength(4000, { message: 'Purchase token is too long' })
   readonly token: string
 }

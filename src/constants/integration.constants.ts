@@ -1,5 +1,8 @@
 export const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 export const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
+export const TMDB_IMAGE_PROXY_PATH = '/images/tmdb'
+export const TMDB_IMAGE_FILE_PATTERN = /^[\w-]+\.(jpg|png)$/
+export const IMAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 // В касте бывают сотни человек — берём первых по порядку
 export const TMDB_CAST_LIMIT = 15
 // Возрастной рейтинг у TMDB свой в каждой стране — продукт англоязычный,
@@ -30,7 +33,10 @@ export const EXTERNAL_SEARCH_TAKE = 10
 // Границы фильтра по году выхода
 export const EXTERNAL_MIN_YEAR = 1900
 export const EXTERNAL_MAX_YEAR = 2100
-export const EXTERNAL_REQUEST_TIMEOUT_MS = 8000
+export const EXTERNAL_REQUEST_TIMEOUT_MS = 2000
+// Источник, не ответивший за таймаут, на это время выпадает из запросов:
+// иначе каждая страница заново ждёт его и забивает лог одинаковыми ошибками
+export const EXTERNAL_UNAVAILABLE_PAUSE_MS = 5 * 60 * 1000
 // Публичный поиск расходует квоты источников: лимит на IP
 export const EXTERNAL_SEARCH_RATE_LIMIT = 30
 export const EXTERNAL_SEARCH_RATE_TTL_MS = 60 * 1000

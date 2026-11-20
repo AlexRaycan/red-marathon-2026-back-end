@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: tastio-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false

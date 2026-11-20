@@ -1,6 +1,10 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 
-import { FREE_PLAN_LIMITS, TRIAL_DAYS } from '../constants/app.constants'
+import {
+  BILLING_ENABLED,
+  FREE_PLAN_LIMITS,
+  TRIAL_DAYS
+} from '../constants/app.constants'
 import {
   SubscriptionPlan,
   SubscriptionProvider,
@@ -46,7 +50,12 @@ export class SubscriptionService {
       isActive: isPro,
       limits: isPro
         ? { collections: null, libraryEntries: null, aiRequestsPerDay: null }
-        : { ...FREE_PLAN_LIMITS },
+        : {
+            ...FREE_PLAN_LIMITS,
+            ...(BILLING_ENABLED
+              ? {}
+              : { collections: null, libraryEntries: null })
+          },
       usage: { collections, libraryEntries }
     }
   }

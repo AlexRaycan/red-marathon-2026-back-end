@@ -114,7 +114,11 @@ export class NotificationService {
 
     await this.prisma.notification.create({ data: dto })
 
-    await this.pushService.send([dto.userId], dto.title, dto.message)
+    await this.pushService.send([dto.userId], dto.title, dto.message, {
+      type: dto.type,
+      entityType: dto.entityType ?? null,
+      entityId: dto.entityId ?? null
+    })
   }
 
   /** Пачкой — когда коллекцией делятся сразу с несколькими друзьями */
@@ -126,12 +130,17 @@ export class NotificationService {
     await this.prisma.notification.createMany({ data })
 
     // Текст у пачки общий — её создаёт одно событие вроде шаринга подборки
-    const { title, message } = data[0]
+    const { title, message, type, entityType, entityId } = data[0]
 
     await this.pushService.send(
       data.map(({ userId }) => userId),
       title,
-      message
+      message,
+      {
+        type,
+        entityType: entityType ?? null,
+        entityId: entityId ?? null
+      }
     )
   }
 

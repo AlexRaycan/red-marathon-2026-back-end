@@ -18,7 +18,7 @@ import {
   AI_TASTE_SAMPLE_SIZE,
   AI_USAGE_WINDOW_MS
 } from '../constants/ai.constants'
-import { FREE_PLAN_LIMITS } from '../constants/app.constants'
+import { BILLING_ENABLED, FREE_PLAN_LIMITS } from '../constants/app.constants'
 import { DiscoverItemResponse } from '../discover/response/discover-response'
 import { DiscoverService } from '../discover/discover.service'
 import {
@@ -272,7 +272,9 @@ export class AiService {
 
     if (used >= FREE_PLAN_LIMITS.aiRequestsPerDay) {
       throw new HttpException(
-        `Free plan is limited to ${FREE_PLAN_LIMITS.aiRequestsPerDay} AI requests per day. Upgrade to remove the limit`,
+        BILLING_ENABLED
+          ? `Free plan is limited to ${FREE_PLAN_LIMITS.aiRequestsPerDay} AI requests per day. Upgrade to remove the limit`
+          : `Daily limit of ${FREE_PLAN_LIMITS.aiRequestsPerDay} AI requests reached. Try again tomorrow`,
         HttpStatus.TOO_MANY_REQUESTS
       )
     }

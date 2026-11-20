@@ -1,4 +1,4 @@
-export const PORT = 4000
+export const PORT = Number(process.env.PORT) || 4000
 
 export const CLIENT_URL = 'http://localhost:3000'
 export const EXPO_URL = 'http://localhost:8081'
@@ -13,6 +13,8 @@ export const SIMILAR_TAKE = 10
 
 /** Сколько обложек отдаём в карточку подборки */
 export const PREVIEW_COVERS_LIMIT = 4
+
+export const BILLING_ENABLED = false
 
 /** PRO снимает эти ограничения */
 export const FREE_PLAN_LIMITS = {

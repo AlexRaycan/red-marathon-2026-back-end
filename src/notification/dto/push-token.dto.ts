@@ -5,7 +5,9 @@ import { PushPlatform } from '../../generated/prisma/enums'
 export class PushTokenDto {
   /** Токен из expo-notifications: ExponentPushToken[xxxxxxxx] */
   @IsString()
-  @Matches(/^ExponentPushToken\[.+\]$/, { message: 'Invalid push token' })
+  @Matches(/^(ExponentPushToken|ExpoPushToken)\[.+\]$/, {
+    message: 'Invalid push token'
+  })
   readonly token: string
 
   @IsEnum(PushPlatform, { message: 'Unknown platform' })

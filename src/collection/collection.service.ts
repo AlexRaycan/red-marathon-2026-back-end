@@ -11,6 +11,7 @@ import { IntegrationService } from '../integration/integration.service'
 import { NotificationService } from '../notification/notification.service'
 import { SubscriptionService } from '../subscription/subscription.service'
 import {
+  BILLING_ENABLED,
   FREE_PLAN_LIMITS,
   PREVIEW_COVERS_LIMIT
 } from '../constants/app.constants'
@@ -324,6 +325,7 @@ export class CollectionService {
 
   /** На бесплатном тарифе число подборок ограничено */
   private async _ensureWithinPlanLimit(userId: string): Promise<void> {
+    if (!BILLING_ENABLED) return
     if (await this.subscriptionService.isProActive(userId)) return
 
     const count = await this.prisma.collection.count({ where: { userId } })
