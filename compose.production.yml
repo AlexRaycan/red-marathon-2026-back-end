@@ -32,7 +32,7 @@ services:
       PUBLIC_API_URL: https://sagaset-api.alexraycan.com
       CLIENT_URL: https://sagaset.alexraycan.com
       TRUST_CLOUDFLARE_CLIENT_IP: 'true'
-      DEVICE_AUTH_ENABLED: 'false'
+      DEVICE_AUTH_ENABLED: 'true'
     networks:
       default:
       proxy_network:
