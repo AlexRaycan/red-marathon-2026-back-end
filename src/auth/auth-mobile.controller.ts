@@ -1,10 +1,24 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards
+} from '@nestjs/common'
 import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags
 } from '@nestjs/swagger'
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
+
+import {
+  AUTH_RATE_TTL_MS,
+  LOGIN_RATE_LIMIT,
+  REGISTER_RATE_LIMIT
+} from '../constants/auth.constants'
 
 import { AuthService } from './auth.service'
 import { DeviceCodeDto } from './dto/device-code.dto'
@@ -28,6 +42,8 @@ export class AuthMobileController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: REGISTER_RATE_LIMIT, ttl: AUTH_RATE_TTL_MS } })
   @ApiOperation({ operationId: 'mobileRegister' })
   @ApiCreatedResponse({ type: MobileAuthResponse })
   register(@Body() dto: RegisterDto): Promise<MobileAuthResponse> {
@@ -35,6 +51,8 @@ export class AuthMobileController {
   }
 
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: LOGIN_RATE_LIMIT, ttl: AUTH_RATE_TTL_MS } })
   @ApiOperation({ operationId: 'mobileLogin' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: MobileAuthResponse })

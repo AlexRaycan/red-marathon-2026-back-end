@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    env_file: /etc/dokploy/sagaset-production/postgres.env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    cpus: 1.0
+    mem_limit: 768m
+    logging:
+      options:
+        max-size: 10m
+        max-file: '3'
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    user: node
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: /etc/dokploy/sagaset-production/api.env
+    environment:
+      NODE_ENV: production
+      PUBLIC_API_URL: https://sagaset-api.alexraycan.com
+      CLIENT_URL: https://sagaset.alexraycan.com
+      TRUST_CLOUDFLARE_CLIENT_IP: 'true'
+      DEVICE_AUTH_ENABLED: 'false'
+    networks:
+      default:
+      proxy_network:
+        aliases:
+          - sagaset-api
+      dokploy-network:
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    cpus: 1.5
+    mem_limit: 1g
+    logging:
+      options:
+        max-size: 10m
+        max-file: '3'
+
+volumes:
+  postgres-data:
+
+networks:
+  proxy_network:
+    external: true
+  dokploy-network:
+    external: true

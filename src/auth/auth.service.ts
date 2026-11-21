@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
@@ -98,6 +99,7 @@ export class AuthService {
 
   /** 1. Расширение просит код и показывает его пользователю */
   async createDeviceCode(): Promise<DeviceCodeResponse> {
+    this._ensureDeviceAuthEnabled()
     // Заодно убираем истёкшие коды, чтобы не занимали шестизначный диапазон
     await this.prisma.deviceCode.deleteMany({
       where: { expiresAt: { lt: new Date() } }
@@ -115,6 +117,7 @@ export class AuthService {
 
   /** 2. Пользователь вводит код в вебе или мобилке, где уже авторизован */
   async approveDeviceCode(code: string, userId: string): Promise<boolean> {
+    this._ensureDeviceAuthEnabled()
     const deviceCode = await this.prisma.deviceCode.findUnique({
       where: { code }
     })
@@ -137,6 +140,7 @@ export class AuthService {
 
   /** 3. Расширение опрашивает эндпоинт и забирает токены после подтверждения */
   async pollDeviceCode(code: string): Promise<DevicePollResponse> {
+    this._ensureDeviceAuthEnabled()
     const deviceCode = await this.prisma.deviceCode.findUnique({
       where: { code },
       include: { user: true }
@@ -166,6 +170,11 @@ export class AuthService {
   }
 
   // Приватные хелперы
+  private _ensureDeviceAuthEnabled(): void {
+    if (process.env.DEVICE_AUTH_ENABLED === 'false') {
+      throw new NotFoundException()
+    }
+  }
 
   private async _validateUser(dto: LoginDto): Promise<User> {
     const email = dto.email.toLowerCase()

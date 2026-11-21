@@ -6,7 +6,8 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException
+  UnauthorizedException,
+  UseGuards
 } from '@nestjs/common'
 import {
   ApiCreatedResponse,
@@ -14,11 +15,15 @@ import {
   ApiOperation,
   ApiTags
 } from '@nestjs/swagger'
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 
 import {
+  AUTH_RATE_TTL_MS,
+  LOGIN_RATE_LIMIT,
   REFRESH_TOKEN_NAME,
-  REFRESH_TOKEN_TTL_MS
+  REFRESH_TOKEN_TTL_MS,
+  REGISTER_RATE_LIMIT
 } from '../constants/auth.constants'
 
 import { AuthService } from './auth.service'
@@ -40,6 +45,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: REGISTER_RATE_LIMIT, ttl: AUTH_RATE_TTL_MS } })
   @ApiOperation({ operationId: 'register' })
   @ApiCreatedResponse({ type: AuthResponse })
   async register(
@@ -54,6 +61,8 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: LOGIN_RATE_LIMIT, ttl: AUTH_RATE_TTL_MS } })
   @ApiOperation({ operationId: 'login' })
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: AuthResponse })
@@ -94,7 +103,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response
   ): Promise<boolean> {
-    res.clearCookie(REFRESH_TOKEN_NAME)
+    res.clearCookie(REFRESH_TOKEN_NAME, this.refreshCookieOptions)
 
     return this.authService.logout(req.cookies?.[REFRESH_TOKEN_NAME])
   }
@@ -113,9 +122,14 @@ export class AuthController {
 
   private _setRefreshCookie(res: Response, refreshToken: string): void {
     res.cookie(REFRESH_TOKEN_NAME, refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
+      ...this.refreshCookieOptions,
       maxAge: REFRESH_TOKEN_TTL_MS
     })
+  }
+
+  private readonly refreshCookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: process.env.NODE_ENV === 'production'
   }
 }
